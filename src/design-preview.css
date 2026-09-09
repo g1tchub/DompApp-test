@@ -787,6 +787,19 @@ textarea {
 }
 .mobile-menu::backdrop {
   background: #21132d66;
+  opacity: var(--menu-reveal, 1);
+  transition: opacity 200ms ease-out;
+}
+.mobile-menu.is-dragging::backdrop {
+  transition: none;
+}
+.mobile-menu.is-dragging {
+  user-select: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mobile-menu::backdrop {
+    transition: none;
+  }
 }
 .mobile-menu-heading {
   display: flex;

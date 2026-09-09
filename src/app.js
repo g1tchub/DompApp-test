@@ -968,7 +968,15 @@ function advance() {
     heading.focus({ preventScroll: true });
   }
 }
-function openMenu() {
+let menuAnimation = null;
+let menuTouch = null;
+let suppressMenuClickUntil = 0;
+function setMenuPosition(menu, position) {
+  const width = menu.offsetWidth;
+  menu.style.transform = `translateX(${position - width}px)`;
+  menu.style.setProperty("--menu-reveal", String(position / width));
+}
+function openMenu(dragging = false) {
   const menu = document.querySelector("#mobile-menu");
   if (!matchMedia("(max-width: 760px)").matches || menu.open) return;
   menu.showModal();
@@ -979,6 +987,9 @@ function openMenu() {
   menu.addEventListener(
     "close",
     () => {
+      menuAnimation?.cancel();
+      menuAnimation = null;
+      menu.classList.remove("is-dragging");
       document.body.classList.remove("menu-open");
       document
         .querySelector(".mobile-menu-toggle")
@@ -986,8 +997,38 @@ function openMenu() {
     },
     { once: true },
   );
+  setMenuPosition(menu, 0);
+  if (!dragging) settleMenu(true);
+}
+function settleMenu(open) {
+  const menu = document.querySelector("#mobile-menu");
+  if (!menu?.open) return;
+  const from = getComputedStyle(menu).transform;
+  menuAnimation?.cancel();
+  menu.classList.remove("is-dragging");
+  setMenuPosition(menu, open ? menu.offsetWidth : 0);
+  const animation = menu.animate(
+    [{ transform: from }, { transform: menu.style.transform }],
+    {
+      duration: matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? 0
+        : 200,
+      easing: "cubic-bezier(.2,.8,.2,1)",
+    },
+  );
+  menuAnimation = animation;
+  animation.finished
+    .then(() => {
+      if (menuAnimation !== animation) return;
+      menuAnimation = null;
+      if (!open) menu.close();
+    })
+    .catch(() => {});
 }
 function closeMenu() {
+  menuTouch = null;
+  menuAnimation?.cancel();
+  menuAnimation = null;
   document.querySelector("#mobile-menu")?.close();
 }
 root.addEventListener("click", (event) => {
@@ -997,48 +1038,98 @@ root.addEventListener("click", (event) => {
   if (event.clientX > bounds.right || event.clientY > bounds.bottom)
     closeMenu();
 });
-let menuTouch = null;
+// A drag must never activate the button beneath the releasing finger.
+root.addEventListener(
+  "click",
+  (event) => {
+    if (Date.now() >= suppressMenuClickUntil) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  },
+  true,
+);
 document.addEventListener(
   "touchstart",
   (event) => {
+    if (menuTouch?.dragging) settleMenu(menuTouch.wasOpen);
     menuTouch = null;
     if (
+      !matchMedia("(max-width: 760px)").matches ||
       event.touches.length !== 1 ||
       event.target.closest("input, textarea, select, [contenteditable], canvas")
     )
       return;
     const touch = event.touches[0];
-    menuTouch = { x: touch.clientX, y: touch.clientY, time: Date.now() };
+    const menu = document.querySelector("#mobile-menu");
+    menuTouch = {
+      x: touch.clientX,
+      y: touch.clientY,
+      lastX: touch.clientX,
+      time: performance.now(),
+      velocity: 0,
+      wasOpen: menu.open,
+      dragging: false,
+    };
   },
   { passive: true },
 );
 document.addEventListener(
-  "touchend",
+  "touchmove",
   (event) => {
-    if (!menuTouch) return;
-    const start = menuTouch;
-    menuTouch = null;
-    const touch = event.changedTouches[0];
-    const dx = touch.clientX - start.x;
-    const dy = touch.clientY - start.y;
-    if (
-      Date.now() - start.time > 700 ||
-      Math.abs(dx) < 65 ||
-      Math.abs(dx) < Math.abs(dy) * 2
-    )
-      return;
-    if (dx > 0) openMenu();
-    else closeMenu();
+    const drag = menuTouch;
+    if (!drag || event.touches.length !== 1) return;
+    const touch = event.touches[0];
+    const dx = touch.clientX - drag.x;
+    const dy = touch.clientY - drag.y;
+    const menu = document.querySelector("#mobile-menu");
+    if (!drag.dragging) {
+      if (Math.abs(dy) > 10 && Math.abs(dy) >= Math.abs(dx)) {
+        menuTouch = null;
+        return;
+      }
+      if (Math.abs(dx) < 10 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+      if (!drag.wasOpen && dx < 0) {
+        menuTouch = null;
+        return;
+      }
+      drag.position = drag.wasOpen ? menu.getBoundingClientRect().right : 0;
+      menuAnimation?.cancel();
+      menuAnimation = null;
+      if (!menu.open) openMenu(true);
+      menu.classList.add("is-dragging");
+      drag.dragging = true;
+    }
+    if (event.cancelable) event.preventDefault();
+    const now = performance.now();
+    drag.velocity = (touch.clientX - drag.lastX) / Math.max(1, now - drag.time);
+    drag.lastX = touch.clientX;
+    drag.time = now;
+    drag.current = Math.max(0, Math.min(menu.offsetWidth, drag.position + dx));
+    setMenuPosition(menu, drag.current);
   },
-  { passive: true },
+  { passive: false },
 );
-document.addEventListener(
-  "touchcancel",
-  () => {
-    menuTouch = null;
-  },
-  { passive: true },
-);
+function finishMenuDrag(cancelled = false) {
+  const drag = menuTouch;
+  menuTouch = null;
+  if (!drag?.dragging) return;
+  suppressMenuClickUntil = Date.now() + 350;
+  const width = document.querySelector("#mobile-menu").offsetWidth;
+  const velocity = performance.now() - drag.time < 120 ? drag.velocity : 0;
+  settleMenu(
+    cancelled
+      ? drag.wasOpen
+      : Math.abs(velocity) > 0.5
+        ? velocity > 0
+        : drag.current >= width / 2,
+  );
+}
+document.addEventListener("touchend", () => finishMenuDrag(), {
+  passive: true,
+});
+document.addEventListener("touchcancel", () => finishMenuDrag(true), {
+  passive: true,
+});
 matchMedia("(max-width: 760px)").addEventListener("change", closeMenu);
 root.addEventListener("click", (e) => {
   const b = e.target.closest("[data-action]");

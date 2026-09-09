@@ -1,6 +1,6 @@
 
 const CACHE_PREFIX = "memory-mastery-" + self.registration.scope;
-const CACHE = CACHE_PREFIX + "294572866a88f633";
+const CACHE = CACHE_PREFIX + "7b5d8b87bbbb4655";
 const ASSETS = ["./index.html","./manifest.webmanifest","./src/app.js","./src/assets/dominic/dominic-coaching.png","./src/assets/dominic/dominic-congratulations.png","./src/assets/dominic/dominic-neutral.png","./src/assets/dominic/dominic-photo.png","./src/assets/favicon.svg","./src/assets/fonts/OFL.txt","./src/assets/fonts/noto-sans-italic-variable.ttf","./src/assets/fonts/noto-sans-variable.ttf","./src/assets/icons/icon-180.png","./src/assets/icons/icon-192.png","./src/assets/icons/icon-512.png","./src/brain.js","./src/content.js","./src/design-preview.css","./src/dominic.css","./src/foundations.css","./src/home-preview.css","./src/install.js","./src/learning.js","./src/storage.js","./src/styles.css","./src/typography.css"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)));
