@@ -127,6 +127,7 @@ function launch(id) {
   nav("session");
 }
 function render() {
+  document.body.classList.remove("menu-open");
   disposeBrain();
   document.body.classList.toggle("home-preview", preview && section === "home");
   document.body.classList.toggle(
@@ -168,6 +169,35 @@ function render() {
         >
       </button>
     </aside>
+    <button
+      type="button"
+      class="mobile-menu-toggle"
+      data-action="open-menu"
+      aria-controls="mobile-menu"
+      aria-expanded="false"
+      aria-label="Open navigation menu"
+    >
+      ☰ <span>Menu</span>
+    </button>
+    <dialog
+      id="mobile-menu"
+      class="mobile-menu"
+      aria-labelledby="mobile-menu-title"
+    >
+      <div class="mobile-menu-heading">
+        <strong id="mobile-menu-title">Memory Mastery</strong
+        ><button
+          type="button"
+          data-action="close-menu"
+          aria-label="Close navigation menu"
+        >
+          ×
+        </button>
+      </div>
+      <nav aria-label="Mobile navigation">
+        ${["home", "learn", "train", "build", "profile", "dominic"].map((id) => `<button type="button" data-action="nav" data-section="${id}" ${id === section ? 'aria-current="page"' : ""}>${navigationIcon(id)}<span>${names[id]}</span></button>`).join("")}
+      </nav>
+    </dialog>
     <main class="main-content">
       <header class="top-bar">
         <div>
@@ -313,11 +343,6 @@ function homePreview() {
       </div>
       <h2 id="next-practice-title">${esc(lesson.title)}</h2>
       <p>${esc(lesson.objective)}</p>
-      <div class="practice-start">
-        <span
-          >${data.session ? "Continue where you left off" : "Begin practice"}</span
-        ><span aria-hidden="true">→</span>
-      </div>
       <button
         type="button"
         class="practice-tap-target"
@@ -943,10 +968,84 @@ function advance() {
     heading.focus({ preventScroll: true });
   }
 }
+function openMenu() {
+  const menu = document.querySelector("#mobile-menu");
+  if (!matchMedia("(max-width: 760px)").matches || menu.open) return;
+  menu.showModal();
+  document.body.classList.add("menu-open");
+  document
+    .querySelector(".mobile-menu-toggle")
+    .setAttribute("aria-expanded", "true");
+  menu.addEventListener(
+    "close",
+    () => {
+      document.body.classList.remove("menu-open");
+      document
+        .querySelector(".mobile-menu-toggle")
+        ?.setAttribute("aria-expanded", "false");
+    },
+    { once: true },
+  );
+}
+function closeMenu() {
+  document.querySelector("#mobile-menu")?.close();
+}
+root.addEventListener("click", (event) => {
+  const menu = document.querySelector("#mobile-menu");
+  if (event.target !== menu) return;
+  const bounds = menu.getBoundingClientRect();
+  if (event.clientX > bounds.right || event.clientY > bounds.bottom)
+    closeMenu();
+});
+let menuTouch = null;
+document.addEventListener(
+  "touchstart",
+  (event) => {
+    menuTouch = null;
+    if (
+      event.touches.length !== 1 ||
+      event.target.closest("input, textarea, select, [contenteditable], canvas")
+    )
+      return;
+    const touch = event.touches[0];
+    menuTouch = { x: touch.clientX, y: touch.clientY, time: Date.now() };
+  },
+  { passive: true },
+);
+document.addEventListener(
+  "touchend",
+  (event) => {
+    if (!menuTouch) return;
+    const start = menuTouch;
+    menuTouch = null;
+    const touch = event.changedTouches[0];
+    const dx = touch.clientX - start.x;
+    const dy = touch.clientY - start.y;
+    if (
+      Date.now() - start.time > 700 ||
+      Math.abs(dx) < 65 ||
+      Math.abs(dx) < Math.abs(dy) * 2
+    )
+      return;
+    if (dx > 0) openMenu();
+    else closeMenu();
+  },
+  { passive: true },
+);
+document.addEventListener(
+  "touchcancel",
+  () => {
+    menuTouch = null;
+  },
+  { passive: true },
+);
+matchMedia("(max-width: 760px)").addEventListener("change", closeMenu);
 root.addEventListener("click", (e) => {
   const b = e.target.closest("[data-action]");
   if (!b || b.disabled) return;
   const a = b.dataset.action;
+  if (a === "open-menu") return openMenu();
+  if (a === "close-menu") return closeMenu();
   if (a === "detail") {
     if (!["", "edit", "goal"].includes(b.dataset.view)) return;
     detailView = b.dataset.view;

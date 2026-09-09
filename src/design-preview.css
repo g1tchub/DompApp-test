@@ -763,3 +763,100 @@ textarea {
     font-size: 10px;
   }
 }
+
+/* Mobile drawer navigation. Native dialog supplies focus trapping and Escape. */
+.mobile-menu-toggle {
+  display: none;
+}
+.mobile-menu {
+  position: fixed;
+  inset: 0 auto 0 0;
+  margin: 0;
+  width: min(290px, 86vw);
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  box-sizing: border-box;
+  padding: max(20px, env(safe-area-inset-top)) 18px
+    max(20px, env(safe-area-inset-bottom));
+  border: 0;
+  border-radius: 0 20px 20px 0;
+  background: #8056b5;
+  color: white;
+  box-shadow: 8px 0 32px #24123833;
+}
+.mobile-menu::backdrop {
+  background: #21132d66;
+}
+.mobile-menu-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+.mobile-menu-heading strong {
+  font-size: 18px;
+}
+.mobile-menu-heading button {
+  background: #6c439f;
+  color: white;
+  border-radius: 10px;
+  width: 44px;
+  height: 44px;
+  font-size: 28px;
+}
+.mobile-menu nav {
+  display: grid;
+  gap: 10px;
+}
+.mobile-menu nav button {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 54px;
+  padding: 14px 16px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: #6c439f;
+  color: white;
+  font-size: 16px;
+  text-align: left;
+}
+.mobile-menu nav button:hover,
+.mobile-menu nav button[aria-current] {
+  background: #593386;
+  border-color: #d9c4f2;
+}
+.mobile-menu button:focus-visible {
+  outline: 3px solid white;
+  outline-offset: 2px;
+}
+body.menu-open {
+  overflow: hidden;
+}
+@media (max-width: 760px) {
+  html {
+    overscroll-behavior-x: none;
+  }
+  body {
+    touch-action: pan-y pinch-zoom;
+  }
+  body .app-shell > .side-nav {
+    display: none;
+  }
+  .mobile-menu-toggle {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    justify-self: start;
+    margin: max(12px, env(safe-area-inset-top)) 18px 0;
+    padding: 10px 14px;
+    min-height: 44px;
+    border-radius: 10px;
+    background: #8056b5;
+    color: white;
+    font-size: 16px;
+  }
+}
