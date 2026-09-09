@@ -175,9 +175,9 @@ function render() {
       data-action="open-menu"
       aria-controls="mobile-menu"
       aria-expanded="false"
-      aria-label="Open navigation menu"
+      aria-label="Open navigation pocket"
     >
-      ☰ <span>Menu</span>
+      ${["home", "learn", "train", "build", "profile", "dominic"].map((id) => `<span class="pocket-icon ${section === id ? "is-active" : ""}" aria-hidden="true">${navigationIcon(id)}</span>`).join("")}
     </button>
     <dialog
       id="mobile-menu"
@@ -336,12 +336,13 @@ function homePreview() {
       class="hero-panel practice-focus"
       aria-labelledby="next-practice-title"
     >
+      <h2 class="today-key-title">Today’s key lesson</h2>
       <div class="practice-meta">
         <span
           >${data.session ? "In progress" : allDone ? "Practise again" : `Session ${lesson.day} of ${lessons.length}`}</span
         ><span>5–10 min</span>
       </div>
-      <h2 id="next-practice-title">${esc(lesson.title)}</h2>
+      <h3 id="next-practice-title">${esc(lesson.title)}</h3>
       <p>${esc(lesson.objective)}</p>
       <button
         type="button"
@@ -362,30 +363,6 @@ function homePreview() {
       </div>
       ${reviews ? button("Review", "nav", 'data-section="train"', true) : '<span class="recall-status">Nothing due</span>'}
     </section>
-    <section class="home-foundations" aria-label="Your sessions">
-      <button
-        type="button"
-        class="home-navigation-row"
-        data-action="nav"
-        data-section="learn"
-      >
-        <span
-          ><strong>Your sessions</strong
-          ><span>Browse all seven sessions</span></span
-        >
-        <span aria-hidden="true">→</span>
-      </button>
-      <div class="home-session-list">
-        ${lessons
-          .filter((item) => item.id !== lesson.id && !done().has(item.id))
-          .slice(0, 2)
-          .map(
-            (item) =>
-              `<button class="home-session-row" data-action="lesson" data-id="${item.id}"><span class="session-index">${item.day}</span><span><strong>${esc(item.title)}</strong><small>${esc(item.skill)}</small></span><span aria-hidden="true">→</span></button>`,
-          )
-          .join("")}
-      </div>
-    </section>
     <button
       type="button"
       class="home-navigation-row home-progress-target"
@@ -400,11 +377,6 @@ function homePreview() {
         >
       </span>
       <span aria-hidden="true">→</span>
-    </button>
-    <button class="home-coach-link" data-action="nav" data-section="dominic">
-      <img src="${portrait("neutral")}" alt="" /><span
-        >Practising with Dominic O’Brien<span>Meet your teacher</span></span
-      ><span aria-hidden="true">→</span>
     </button>
   </div>`;
 }
