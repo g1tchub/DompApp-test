@@ -177,25 +177,27 @@ function render() {
       aria-expanded="false"
       aria-label="Open navigation pocket"
     >
-      ${["home", "learn", "train", "build", "profile", "dominic"].map((id) => `<span class="pocket-icon ${section === id ? "is-active" : ""}" aria-hidden="true">${navigationIcon(id)}</span>`).join("")}
+      ${["home", "learn", "train", "build", "profile"].map((id) => `<span class="pocket-icon ${section === id ? "is-active" : ""}" aria-hidden="true">${navigationIcon(id)}</span>`).join("")}
+      <span
+        class="pocket-icon pocket-dominic ${section === "dominic" ? "is-active" : ""}"
+        aria-hidden="true"
+        ><img src="${portrait()}" alt=""
+      /></span>
     </button>
-    <dialog
-      id="mobile-menu"
-      class="mobile-menu"
-      aria-labelledby="mobile-menu-title"
-    >
-      <div class="mobile-menu-heading">
-        <strong id="mobile-menu-title">Memory Mastery</strong
-        ><button
-          type="button"
-          data-action="close-menu"
-          aria-label="Close navigation menu"
-        >
-          ×
-        </button>
-      </div>
+    <dialog id="mobile-menu" class="mobile-menu" aria-label="Navigation pocket">
       <nav aria-label="Mobile navigation">
-        ${["home", "learn", "train", "build", "profile", "dominic"].map((id) => `<button type="button" data-action="nav" data-section="${id}" ${id === section ? 'aria-current="page"' : ""}>${navigationIcon(id)}<span>${names[id]}</span></button>`).join("")}
+        ${["home", "learn", "train", "build", "profile"].map((id) => `<button type="button" data-action="nav" data-section="${id}" ${id === section ? 'aria-current="page"' : ""}>${navigationIcon(id)}<span>${names[id]}</span></button>`).join("")}
+        <button
+          type="button"
+          class="pocket-dominic"
+          data-action="nav"
+          data-section="dominic"
+          aria-label="Meet Dominic"
+          title="Meet Dominic"
+          ${section === "dominic" ? 'aria-current="page"' : ""}
+        >
+          <img src="${portrait()}" alt="" /><span>Meet Dominic</span>
+        </button>
       </nav>
     </dialog>
     <main class="main-content">

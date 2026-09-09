@@ -777,10 +777,10 @@ textarea {
   height: 100dvh;
   max-height: none;
   box-sizing: border-box;
-  padding: max(20px, env(safe-area-inset-top)) 18px
+  padding: max(16px, env(safe-area-inset-top)) 18px
     max(20px, env(safe-area-inset-bottom));
   border: 0;
-  border-radius: 0 20px 20px 0;
+  border-radius: 0;
   background: #8056b5;
   color: white;
   box-shadow: 8px 0 32px #24123833;
@@ -801,27 +801,18 @@ textarea {
     transition: none;
   }
 }
-.mobile-menu-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 24px;
-}
-.mobile-menu-heading strong {
-  font-size: 18px;
-}
-.mobile-menu-heading button {
-  background: #6c439f;
-  color: white;
-  border-radius: 10px;
-  width: 44px;
-  height: 44px;
-  font-size: 28px;
-}
 .mobile-menu nav {
-  display: grid;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   gap: 10px;
+}
+.mobile-menu nav .pocket-dominic {
+  margin-top: auto;
+  width: 100%;
+  flex-shrink: 0;
+  justify-content: flex-start;
+  padding: 12px 16px;
 }
 .mobile-menu nav button {
   display: flex;
@@ -850,6 +841,9 @@ body.menu-open {
   overflow: hidden;
 }
 @media (max-width: 760px) {
+  :root {
+    --pocket-width: clamp(40px, 11vw, 52px);
+  }
   html {
     overscroll-behavior-x: none;
   }
@@ -863,7 +857,7 @@ body.menu-open {
     position: fixed;
     z-index: 20;
     inset: 0 auto 0 0;
-    width: calc(8mm + env(safe-area-inset-left));
+    width: calc(var(--pocket-width) + env(safe-area-inset-left));
     height: 100dvh;
     display: flex;
     flex-direction: column;
@@ -871,9 +865,9 @@ body.menu-open {
     justify-content: flex-start;
     gap: 10px;
     margin: 0;
-    padding: max(88px, env(safe-area-inset-top)) 0 20px
-      env(safe-area-inset-left);
-    border-radius: 0 12px 12px 0;
+    padding: max(16px, env(safe-area-inset-top)) 0
+      max(20px, env(safe-area-inset-bottom)) env(safe-area-inset-left);
+    border-radius: 0;
     background: #8056b5;
     color: white;
   }
@@ -881,22 +875,32 @@ body.menu-open {
     display: grid;
     place-items: center;
     width: 100%;
-    min-height: 48px;
-    border-radius: 6px;
+    min-height: 54px;
+    border-radius: 0;
   }
   .pocket-icon.is-active {
     background: #593386;
   }
   .pocket-icon svg {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
+  }
+  .mobile-menu-toggle .pocket-dominic {
+    margin-top: auto;
+  }
+  .pocket-dominic img {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: center 20%;
   }
   .mobile-menu-toggle:focus-visible {
     outline: 3px solid #593386;
     outline-offset: 2px;
   }
   body .app-shell {
-    margin-left: calc(8mm + env(safe-area-inset-left));
+    margin-left: calc(var(--pocket-width) + env(safe-area-inset-left));
     padding-bottom: 0;
   }
   body.home-preview .main-content {
