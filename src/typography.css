@@ -1,0 +1,21 @@
+/* Change the font faces and this single token to switch the entire app's font. */
+@font-face {
+  font-family: "Noto Sans";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("./assets/fonts/noto-sans-variable.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Noto Sans";
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("./assets/fonts/noto-sans-italic-variable.ttf") format("truetype");
+}
+
+:root {
+  --font-ui: "Noto Sans", ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-ui);
+}

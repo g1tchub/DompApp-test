@@ -1,0 +1,154 @@
+.app-shell .side-nav .nav-coach {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 64px;
+  margin-top: auto;
+  padding: 10px;
+  text-align: left;
+  color: var(--ink);
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  cursor: pointer;
+}
+.app-shell .side-nav .nav-coach:hover,
+.app-shell .side-nav .nav-coach.is-active {
+  background: var(--green-2);
+}
+.app-shell .side-nav .nav-coach:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 4px;
+}
+.app-shell .side-nav .nav-coach img {
+  flex: 0 0 42px;
+  width: 42px;
+  height: 46px;
+  object-fit: cover;
+  object-position: center 20%;
+  border-radius: 8px;
+  margin: 0;
+}
+.app-shell .side-nav .nav-coach strong {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.app-shell .side-nav .nav-coach small {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.dominic-page {
+  max-width: 960px;
+  margin: auto;
+}
+.dominic-page .dominic-hero {
+  align-items: center;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 260px);
+  gap: 32px;
+  padding: 32px;
+}
+.dominic-page .dominic-photo {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+}
+.dominic-page h2 {
+  font-size: clamp(24px, 2.5vw, 32px);
+  line-height: 1.25;
+}
+.dominic-page .dominic-hero h2 {
+  font-size: clamp(32px, 4vw, 46px);
+}
+.dominic-page p {
+  color: var(--muted);
+  line-height: 1.75;
+}
+.dominic-story,
+.dominic-methods {
+  margin-top: 44px;
+}
+.dominic-story {
+  max-width: 72ch;
+}
+.dominic-method-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px;
+  margin-top: 28px;
+}
+.dominic-method-grid article {
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+.dominic-method-grid h3 {
+  margin: 12px 0;
+  font-size: 21px;
+}
+.dominic-method-grid .method-example {
+  border-left: 3px solid var(--green-2);
+  padding-left: 16px;
+  color: var(--ink);
+}
+.dominic-method-grid small {
+  display: block;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.dominic-next {
+  margin-top: 40px;
+  padding: 24px;
+  background: var(--green-2);
+  border-radius: 12px;
+}
+.dominic-next h2 {
+  margin-top: 0;
+}
+.dominic-sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  margin-top: 30px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.dominic-sources strong {
+  width: 100%;
+}
+.dominic-sources a {
+  color: var(--muted);
+  text-underline-offset: 3px;
+}
+@media (max-width: 980px) {
+  .app-shell .side-nav .nav-coach {
+    width: fit-content;
+    max-width: 100%;
+    min-height: 44px;
+    padding: 6px 10px;
+  }
+  .app-shell .side-nav .nav-coach img {
+    width: 32px;
+    height: 36px;
+    flex-basis: 32px;
+  }
+}
+@media (max-width: 600px) {
+  .dominic-page .dominic-hero {
+    grid-template-columns: 1fr;
+    padding: 22px;
+    gap: 24px;
+  }
+  .dominic-page .dominic-photo {
+    grid-row: 1;
+    width: min(100%, 220px);
+    justify-self: center;
+  }
+  .dominic-method-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
