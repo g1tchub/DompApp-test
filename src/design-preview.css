@@ -1,4 +1,10 @@
 @import url("./home-preview.css");
+body.practice-preview .app-shell {
+  margin-left: 0;
+}
+body.practice-preview .mobile-menu-toggle {
+  display: none;
+}
 /* An opt-in visual direction. Kept separate from the current stylesheet for review. */
 :root {
   --ink: #292738;

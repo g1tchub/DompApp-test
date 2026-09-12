@@ -951,6 +951,7 @@ function setMenuPosition(menu, position) {
   menu.style.setProperty("--menu-reveal", String(position / width));
 }
 function openMenu(dragging = false) {
+  if (section === "session") return;
   const menu = document.querySelector("#mobile-menu");
   if (!matchMedia("(max-width: 760px)").matches || menu.open) return;
   menu.showModal();
@@ -1028,6 +1029,7 @@ document.addEventListener(
     if (menuTouch?.dragging) settleMenu(menuTouch.wasOpen);
     menuTouch = null;
     if (
+      section === "session" ||
       !matchMedia("(max-width: 760px)").matches ||
       event.touches.length !== 1 ||
       event.target.closest("input, textarea, select, [contenteditable], canvas")
