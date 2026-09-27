@@ -1,4 +1,4 @@
-import { lessons, defaultJourney, goals } from "./content.js";
+import { lessons, defaultJourney, periodicJourney, goals } from "./content.js";
 import {
   scoreRecall,
   createSession,
@@ -11,6 +11,7 @@ import {
 } from "./learning.js";
 import { load, save, empty, validateJourney } from "./storage.js";
 import { mountBrain } from "./brain.js";
+import { lessonVisualMarkup, mountLessonVisual } from "./lesson-visual.js";
 
 const html = String.raw;
 const root = document.querySelector("#app");
@@ -36,12 +37,16 @@ try {
 const loaded = load(storage);
 let data = loaded.data,
   notice = loaded.warning;
-let section = "home",
+let section =
+    new URLSearchParams(location.search).get("lesson-preview") === "images"
+      ? "scene"
+      : "home",
   review = null,
   reviewResult = null,
   brainDemo = null,
-  disposeBrain = () => {};
-let draft = data.draft || structuredClone(data.journeys[0]);
+  disposeBrain = () => {},
+  disposeLessonVisual = () => {};
+let draft = structuredClone(data.draft || data.journeys[0]);
 const esc = (v) =>
   String(v ?? "").replace(
     /[&<>"']/g,
@@ -60,6 +65,7 @@ const names = {
   profile: "My progress",
   dominic: "Meet Dominic",
   session: "Your practice",
+  scene: "Lesson example",
   review: "Recall review",
 };
 const symbols = {
@@ -99,9 +105,13 @@ function persist() {
     }
   }
 }
-let detailView = "";
+let detailView = "",
+  journeyId = null,
+  journeyPracticeView = "";
 function nav(target) {
   detailView = "";
+  journeyId = null;
+  journeyPracticeView = "";
   if (names[target]) section = target;
   render();
   window.scrollTo(0, 0);
@@ -119,7 +129,7 @@ function launch(id) {
     id,
     data.attempts,
     (lessons.find((l) => l.id === id).ownRoute
-      ? data.journeys[0]
+      ? data.practiceJourney
       : defaultJourney
     ).stops,
   );
@@ -129,6 +139,7 @@ function launch(id) {
 function render() {
   document.body.classList.remove("menu-open");
   disposeBrain();
+  disposeLessonVisual();
   document.body.classList.toggle("home-preview", preview && section === "home");
   document.body.classList.toggle(
     "utility-preview",
@@ -136,7 +147,7 @@ function render() {
   );
   document.body.classList.toggle(
     "practice-preview",
-    preview && section === "session",
+    preview && ["session", "scene"].includes(section),
   );
   root.innerHTML = html`<div class="app-shell">
     <aside class="side-nav">
@@ -221,13 +232,13 @@ function render() {
       >
         ${esc(notice)}
       </p>
-      ${({ home: home, learn: learn, train: train, build: build, profile: profile, dominic: dominic, session: sessionView, review: reviewView }[section] || home)()}
+      ${({ home: home, learn: learn, train: train, build: build, profile: profile, dominic: dominic, session: sessionView, scene: lessonScenePreview, review: reviewView }[section] || home)()}
       <footer class="app-footer">
         <span>Local prototype · no account or cloud sync</span>
       </footer>
     </main>
   </div>`;
-  const screenKey = `${section}:${detailView}:${section === "session" ? data.session?.step : ""}`;
+  const screenKey = `${section}:${detailView}:${journeyId || ""}:${journeyPracticeView}:${section === "session" ? data.session?.step : ""}`;
   if (preview && render.lastScreen && render.lastScreen !== screenKey) {
     const screen = document.querySelector(
       ".session-stage, .practice-home, .learn-surface, .utility-screen",
@@ -243,6 +254,12 @@ function render() {
     }
   }
   render.lastScreen = screenKey;
+  const visual = document.querySelector(".lesson-visual");
+  if (visual)
+    disposeLessonVisual = mountLessonVisual(visual, {
+      preference: data.preferences.lessonAnimations,
+      onPreferenceChange: saveLessonMotionPreference,
+    });
   if (section === "profile" && preview && detailView === "")
     disposeBrain = mountBrain(
       document.querySelector("#memory-brain"),
@@ -415,8 +432,64 @@ function learn() {
     </p>
   </section>`;
 }
+function practiceJourneyChoices() {
+  const saved = data.journeys.filter((journey) => !journey.template);
+  if (saved.length) return saved;
+  return [
+    data.journeys.find((journey) => journey.id === periodicJourney.id) ||
+      periodicJourney,
+  ];
+}
+function practiceJourneyPicker() {
+  const choices = practiceJourneyChoices();
+  return html`<section class="panel journey-practice-picker">
+    <button
+      type="button"
+      class="detail-back"
+      data-action="journey-practice-back"
+    >
+      ← Back to practise
+    </button>
+    <p class="eyebrow">Journey practice</p>
+    <h2>Choose a journey</h2>
+    <p>
+      Walk through the stops in order and reveal each association as you go.
+    </p>
+    <div class="journey-practice-options">
+      ${choices.map((journey) => `<button type="button" class="journey-practice-option" data-action="start-journey-practice" data-journey-id="${esc(journey.id)}"><span><strong>${esc(journey.name)}</strong><small>${journey.template ? "Example template · " : ""}${journey.stops.length} ${journey.stops.length === 1 ? "stop" : "stops"}</small></span><span aria-hidden="true">→</span></button>`).join("")}
+    </div>
+  </section>`;
+}
+function journeyPracticeScreen(journey) {
+  if (!journey) return practiceJourneyPicker();
+  return html`<section class="panel journey-practice-panel">
+    <button
+      type="button"
+      class="detail-back"
+      data-action="journey-practice-back"
+    >
+      ← Back to practise
+    </button>
+    <p class="eyebrow">Journey practice</p>
+    <h2>${esc(journey.name)}</h2>
+    <p>Try to recall the association at each location before you reveal it.</p>
+    <ol class="journey-practice-list">
+      ${journey.stops.map((stop, i) => `<li><span class="journey-practice-index">${i + 1}</span><div><span class="journey-practice-label">Location ${i + 1}</span><strong>${esc(stop.name)}</strong><details><summary>Reveal association ${i + 1}</summary><p>${stop.association ? esc(stop.association) : "No association saved yet."}</p></details></div></li>`).join("")}
+    </ol>
+    <div class="builder-actions">
+      ${button("Choose another journey", "open-journey-picker", "", true)}
+    </div>
+  </section>`;
+}
 function train() {
-  return html`<section class="panel">
+  if (journeyPracticeView === "picker") return practiceJourneyPicker();
+  if (journeyPracticeView)
+    return journeyPracticeScreen(
+      practiceJourneyChoices().find(
+        (journey) => journey.id === journeyPracticeView,
+      ),
+    );
+  return html`<section class="panel practice-screen">
     <p class="eyebrow">Recall, then revisit</p>
     <h2>${due().length ? "Your reviews are ready." : "You’re up to date."}</h2>
     <p>
@@ -432,6 +505,15 @@ function train() {
         .join("") ||
       '<p class="empty-state">Nothing due yet. You can still repeat a lesson with another list.</p>'
     }${button("Choose a lesson", "nav", 'data-section="learn"', true)}
+    <section class="practice-journey-entry">
+      <p class="eyebrow">Saved journeys</p>
+      <h3>Practice one of my journeys</h3>
+      <p>
+        Choose a saved journey and walk through its locations and associations
+        in order.
+      </p>
+      ${button("Practice one of my journeys", "open-journey-picker", "", true)}
+    </section>
   </section>`;
 }
 function answerInputs(values, field) {
@@ -443,6 +525,19 @@ function answerInputs(values, field) {
       Exact names are checked; case and extra spaces are ignored.
     </p>`;
 }
+function lessonScenePreview() {
+  return html`<section class="session-panel">
+    <article class="visual-lesson-teaching">
+      <p class="eyebrow">Session 2 · Imagination</p>
+      <h2>Make your images stick</h2>
+      <p>
+        A little movement. An impossible size. One image to hold in your mind.
+      </p>
+      ${lessonVisualMarkup("images")}
+      ${button(data.session ? "Return to my practice" : "Explore the lessons", "nav", `data-section="${data.session ? "session" : "learn"}"`)}
+    </article>
+  </section>`;
+}
 function sessionView() {
   const s = data.session;
   if (!s)
@@ -451,6 +546,7 @@ function sessionView() {
       ${button("Choose a lesson", "nav", 'data-section="learn"')}
     </section>`;
   const l = lessons.find((l) => l.id === s.lessonId);
+  const visualMarkup = s.step === "teach" ? lessonVisualMarkup(l.id) : "";
   const steps = [
     "baseline-study",
     "baseline-recall",
@@ -472,18 +568,24 @@ function sessionView() {
       <p>You don’t need to get them all. This is your first attempt.</p>
       ${answerInputs(s.baselineAnswers, "baselineAnswers")}${button("Learn the technique", "advance")}`;
   if (s.step === "teach")
-    body = html`<div class="coach-layout">
-      ${mentor()}
-      <article>
-        <h2>${esc(l.title)}</h2>
-        <p>${esc(l.teach)}</p>
-        <div class="example-note">
-          <strong>Try this scene</strong>
-          <p>${esc(l.example)}</p>
-        </div>
-        ${l.ownRoute ? `<p>Using: <strong>${esc(data.journeys[0].name)}</strong></p>${button("Edit my route", "nav", 'data-section="build"', true)}` : ""}${l.custom ? `<label class="text-field"><span>Your five objects, separated by commas</span><input data-field="customText" maxlength="450" value="${esc(s.customText)}" placeholder="apple, soap, rice, coffee, towel"></label>` : ""}${button("Try it yourself", "advance")}
-      </article>
-    </div>`;
+    body = visualMarkup
+      ? html`<article class="visual-lesson-teaching">
+          <h2>${esc(l.title)}</h2>
+          <p>${esc(l.teach)}</p>
+          ${visualMarkup} ${button("Try it yourself", "advance")}
+        </article>`
+      : html`<div class="coach-layout">
+          ${mentor()}
+          <article>
+            <h2>${esc(l.title)}</h2>
+            <p>${esc(l.teach)}</p>
+            <div class="example-note">
+              <strong>Try this scene</strong>
+              <p>${esc(l.example)}</p>
+            </div>
+            ${l.ownRoute ? `<p>Using: <strong>${esc(data.practiceJourney.name)}</strong></p>` : ""}${l.custom ? `<label class="text-field"><span>Your five objects, separated by commas</span><input data-field="customText" maxlength="450" value="${esc(s.customText)}" placeholder="apple, soap, rice, coffee, towel"></label>` : ""}${button("Try it yourself", "advance")}
+          </article>
+        </div>`;
   if (s.step === "study")
     body = html`<h2>
         ${l.mode === "link" ? "Connect each object to the next." : l.mode === "image" ? "Make each object distinctive." : "Give each object a place."}
@@ -563,34 +665,153 @@ function reviewView() {
     ${reviewResult ? `<h2>${reviewResult.score} of 5 remembered</h2><p>After ${Math.floor(reviewResult.delayMs / 3600000)} hours since your last recorded practice or review.</p><p>${reviewResult.missing.length ? `Review these: ${reviewResult.missing.map(esc).join(", ")}` : "You retrieved every object."}</p><div class="word-grid">${review.words.map((w) => `<span>${esc(w)}</span>`).join("")}</div>${button("Done", "nav", 'data-section="train"')}` : `<h2>Revisit the scene in your mind.</h2><p>${esc(lessons.find((l) => l.id === review.lessonId).title)} · ${new Date(review.completedAt).toLocaleDateString("en-GB")}</p>${answerInputs(review.answers, "reviewAnswers")}${button("Check recall", "finish-review")}`}
   </section>`;
 }
-function build() {
-  if (preview && detailView !== "edit")
-    return `<section class="utility-screen">${detailRow(esc(draft.name), `${draft.stops.length} stops · ${data.draft ? "Unsaved changes" : "Saved journey"}`, "edit")}<ol class="route-overview">${draft.stops.map((s) => `<li>${esc(s.name)}</li>`).join("")}</ol>${data.session ? button("Return to practice", "resume", "", true) : ""}</section>`;
-  return html`<section class="panel builder-panel">
+function journeyCard(journey) {
+  const previewStops = journey.stops.slice(0, 3).map((stop) => stop.name),
+    remaining = journey.stops.length - previewStops.length;
+  return html`<article class="journey-card">
+    <button
+      type="button"
+      class="journey-card-main"
+      data-action="detail"
+      data-view="journey"
+      data-journey-id="${esc(journey.id)}"
+      aria-label="Open journey ${esc(journey.name)}"
+    >
+      <span class="journey-card-copy">
+        <strong>${esc(journey.name)}</strong>
+        <span class="journey-card-kind"
+          >${journey.template ? "Example template" : "Saved journey"}</span
+        >
+        <span
+          >${journey.stops.length}
+          ${journey.stops.length === 1 ? "stop" : "stops"}</span
+        >
+        <small
+          >${previewStops.map(esc).join(" · ")}${remaining > 0 ? ` · +${remaining} more` : ""}</small
+        >
+      </span>
+      <span class="journey-card-arrow" aria-hidden="true">→</span>
+    </button>
+  </article>`;
+}
+function journeysList() {
+  const draftJourney = data.draft,
+    draftIsSaved =
+      draftJourney &&
+      data.journeys.some((journey) => journey.id === draftJourney.id);
+  return html`<section class="utility-screen journeys-screen">
+    <div class="journeys-heading">
+      <div>
+        <p class="eyebrow">Your saved journeys</p>
+        <h2>Create a journey for anything you want to remember.</h2>
+        <p>
+          Save familiar routes, sequences or personal templates. A journey can
+          have as few or as many stops as you need.
+        </p>
+      </div>
+      ${button("Create Journey", "new-journey")}
+    </div>
     ${
-      preview
-        ? `${detailBack()}<h2>Edit journey</h2><p>Use distinct places in order. Practice uses the first five stops.</p>`
-        : html`<p class="eyebrow">Your reusable route</p>
-            <h2>Five places you know by heart.</h2>
-            <p>
-              Start with five distinct stops. You can extend to twenty;
-              foundation exercises use the first five.
-            </p>`
+      draftJourney
+        ? html`<section class="unsaved-journey" aria-label="Unsaved journey">
+            <div>
+              <strong
+                >${draftIsSaved ? `Unsaved changes to ${esc(draftJourney.name || "this journey")}` : "New journey not saved"}</strong
+              ><span>Continue editing before you leave it behind.</span>
+            </div>
+            <div class="unsaved-journey-actions">
+              ${button("Resume editing", "resume-draft", "", true)}${button("Discard", "discard-draft", "", true)}
+            </div>
+          </section>`
+        : ""
     }
+    <div class="journey-list" aria-label="Saved journeys">
+      ${data.journeys.map(journeyCard).join("") || '<p class="empty-state">You have not saved a journey yet.</p>'}
+    </div>
+  </section>`;
+}
+function journeyNamePrompt() {
+  return html`<section class="utility-screen journey-name-prompt">
+    ${detailBack()}
+    <p class="eyebrow">New journey</p>
+    <h2 tabindex="-1">Name your journey</h2>
+    <p>Choose a name that will help you recognise this journey later.</p>
     <label class="text-field"
       ><span>Journey name</span
       ><input
         maxlength="100"
         data-field="journeyName"
         value="${esc(draft.name)}"
-    /></label>
-    <div class="stop-list">
-      ${draft.stops.map((stop, i) => `<article class="stop-row"><strong>${i + 1}</strong><div class="stop-fields"><label><span>Location ${i + 1}</span><input maxlength="100" data-field="stopName" data-index="${i}" value="${esc(stop.name)}"></label><label><span>Association (optional)</span><input maxlength="500" data-field="stopAssociation" data-index="${i}" value="${esc(stop.association)}"></label></div><div class="row-actions"><button data-action="move-stop" data-index="${i}" data-direction="-1" aria-label="Move stop ${i + 1} up" ${i === 0 ? "disabled" : ""}>↑</button><button data-action="move-stop" data-index="${i}" data-direction="1" aria-label="Move stop ${i + 1} down" ${i === draft.stops.length - 1 ? "disabled" : ""}>↓</button></div></article>`).join("")}
-    </div>
+        autocomplete="off"
+        autofocus
+      />
+    </label>
     <div class="builder-actions">
-      ${button("Add stop", "add-stop", draft.stops.length >= 20 ? "disabled" : "", true)}${button("Save journey", "save-journey")}${data.session ? button("Return to lesson", "resume", "", true) : ""}
+      ${button("Save name & continue", "start-journey-editor")}
     </div>
   </section>`;
+}
+function journeyDetail(journey) {
+  if (!journey) return journeysList();
+  return html`<section class="utility-screen journey-detail">
+    ${detailBack()}
+    <div class="journey-detail-heading">
+      <div>
+        <p class="eyebrow">Saved journey</p>
+        <h2 tabindex="-1">${esc(journey.name)}</h2>
+        <p>
+          ${journey.stops.length}
+          ${journey.stops.length === 1 ? "stop" : "stops"}
+        </p>
+      </div>
+      ${button("Edit journey", "detail", `data-view="edit" data-journey-id="${esc(journey.id)}"`, true)}
+    </div>
+    <ol class="route-overview">
+      ${journey.stops.map((stop, i) => `<li><div><span>Location ${i + 1}</span><strong>${esc(stop.name)}</strong></div><div><span>Association ${i + 1}</span><strong>${stop.association ? esc(stop.association) : "—"}</strong></div></li>`).join("")}
+    </ol>
+  </section>`;
+}
+function journeyEditor() {
+  const editingSavedJourney = data.journeys.some(
+    (journey) => journey.id === draft.id,
+  );
+  return html`<section class="utility-screen journey-editor">
+    ${detailBack()}
+    <p class="eyebrow">
+      ${editingSavedJourney ? "Saved journey" : "New journey"}
+    </p>
+    <h2 tabindex="-1">
+      ${editingSavedJourney ? "Edit journey" : "Create a journey"}
+    </h2>
+    <p>
+      Give it a name, then add the stops in the order you want to remember them.
+      There is no fixed journey length.
+    </p>
+    <label class="text-field"
+      ><span>Journey name</span
+      ><input
+        maxlength="100"
+        data-field="journeyName"
+        value="${esc(draft.name)}"
+        autocomplete="off"
+      />
+    </label>
+    <div class="stop-list">
+      ${draft.stops.map((stop, i) => `<article class="stop-row"><strong>${i + 1}</strong><div class="stop-fields"><label><span>Location ${i + 1}</span><input maxlength="100" data-field="stopName" data-index="${i}" value="${esc(stop.name)}" placeholder="Stop ${i + 1}" autocomplete="off"></label><label><span>Association ${i + 1}</span><input maxlength="500" data-field="stopAssociation" data-index="${i}" value="${esc(stop.association)}" autocomplete="off"></label></div><div class="row-actions"><button type="button" data-action="move-stop" data-index="${i}" data-direction="-1" aria-label="Move stop ${i + 1} up" ${i === 0 ? "disabled" : ""}>↑</button><button type="button" data-action="move-stop" data-index="${i}" data-direction="1" aria-label="Move stop ${i + 1} down" ${i === draft.stops.length - 1 ? "disabled" : ""}>↓</button><button type="button" data-action="remove-stop" data-index="${i}" aria-label="Remove stop ${i + 1}" ${draft.stops.length === 1 ? "disabled" : ""}>×</button></div></article>`).join("")}
+    </div>
+    <div class="builder-actions">
+      ${button("Add stop", "add-stop", "", true)}${button("Save journey", "save-journey")}
+    </div>
+  </section>`;
+}
+function build() {
+  if (detailView === "name") return journeyNamePrompt();
+  if (detailView === "journey")
+    return journeyDetail(
+      data.journeys.find((journey) => journey.id === journeyId),
+    );
+  if (detailView === "edit") return journeyEditor();
+  return journeysList();
 }
 const brainEvolutions = [
   {
@@ -707,11 +928,43 @@ function practiceGoalButton() {
 function practiceGoalScreen() {
   return `<section class="utility-screen practice-goal-screen">${detailBack()}<h2 tabindex="-1">Set a practice goal</h2><p>What would you like to work on? Choose a focus for your practice. You can change it at any time.</p><div class="practice-goal-options">${goals.map((goal) => `<button type="button" class="practice-goal-option" data-action="set-goal" data-goal="${esc(goal)}" aria-pressed="${data.goal === goal}"><span class="practice-goal-option-heading"><strong>${esc(goal)}</strong>${data.goal === goal ? '<span class="practice-goal-selected">Selected</span>' : '<span aria-hidden="true">→</span>'}</span><span>${esc(goalExplanations[goal])}</span></button>`).join("")}</div></section>`;
 }
+function lessonMotionSettings() {
+  const preference = data.preferences.lessonAnimations;
+  return html`<section
+    class="lesson-motion-settings"
+    aria-labelledby="lesson-motion-heading"
+  >
+    <h2 id="lesson-motion-heading">Lesson animations</h2>
+    <p>
+      Choose how the example scenes play. With animations off, you’ll see the
+      final image straight away. Replay plays a scene once whenever you choose.
+    </p>
+    <label for="lesson-motion-setting">Play animations automatically</label>
+    <select id="lesson-motion-setting" aria-describedby="lesson-motion-help">
+      <option value="system" ${preference === "system" ? "selected" : ""}>
+        Device preference
+      </option>
+      <option value="on" ${preference === "on" ? "selected" : ""}>On</option>
+      <option value="off" ${preference === "off" ? "selected" : ""}>Off</option>
+    </select>
+    <p id="lesson-motion-help" class="fine-print">
+      Device preference follows your reduced-motion setting. This choice is
+      saved on this device.
+    </p>
+    <p class="fine-print" id="lesson-motion-feedback" role="status"></p>
+  </section>`;
+}
+function saveLessonMotionPreference(preference) {
+  if (!["system", "on", "off"].includes(preference)) return;
+  data.preferences.lessonAnimations = preference;
+  persist();
+  disposeLessonVisual.setPreference?.(preference);
+}
 function profilePreview() {
   const latest = data.attempts.at(-1),
     delayed = data.reviews.at(-1);
   const content = `<dl class="progress-summary"><div><dt>Sessions completed</dt><dd>${done().size} <small>of 7</small></dd></div><div><dt>Latest practice recall</dt><dd>${latest ? `${latest.score} <small>of 5</small>` : "—"}</dd></div><div><dt>Latest delayed recall</dt><dd>${delayed ? `${delayed.score} <small>of 5</small>` : "—"}</dd></div></dl><p class="progress-context">${latest ? "Recall results count the objects you remembered. Session completion records practice." : "Complete a practice to see your recall results. Delayed reviews become available the next day."}</p>${practiceGoalButton()}`;
-  return `<section class="utility-screen">${brainPanel()}${content}</section>`;
+  return `<section class="utility-screen">${brainPanel()}${content}${lessonMotionSettings()}</section>`;
 }
 function profile() {
   if (detailView === "goal") return practiceGoalScreen();
@@ -917,7 +1170,7 @@ function advance() {
       s.fresh = false;
     }
     if (l.ownRoute)
-      s.route = data.journeys[0].stops.slice(0, 5).map((x) => x.name);
+      s.route = data.practiceJourney.stops.slice(0, 5).map((x) => x.name);
     s.step = "study";
     s.studyStartedAt = now;
   } else if (s.step === "study") {
@@ -1114,8 +1367,32 @@ root.addEventListener("click", (e) => {
   if (a === "open-menu") return openMenu();
   if (a === "close-menu") return closeMenu();
   if (a === "detail") {
-    if (!["", "edit", "goal"].includes(b.dataset.view)) return;
-    detailView = b.dataset.view;
+    const view = b.dataset.view;
+    if (!["", "edit", "goal", "journey"].includes(view)) return;
+    if (section === "build" && ["edit", "journey"].includes(view)) {
+      const journey = data.journeys.find(
+        (item) => item.id === b.dataset.journeyId,
+      );
+      if (!journey) return;
+      journeyId = journey.id;
+      if (view === "edit") {
+        if (data.draft && data.draft.id === journey.id)
+          draft = structuredClone(data.draft);
+        else {
+          if (
+            data.draft &&
+            !confirm("Discard the current unsaved journey changes?")
+          )
+            return;
+          draft = structuredClone(journey);
+          if (data.draft) {
+            data.draft = null;
+            persist();
+          }
+        }
+      }
+    } else if (view === "") journeyId = null;
+    detailView = view;
     render();
     window.scrollTo(0, 0);
     const heading = document.querySelector(
@@ -1137,6 +1414,24 @@ root.addEventListener("click", (e) => {
   if (a === "nav") return nav(b.dataset.section);
   if (a === "lesson") return launch(b.dataset.id);
   if (a === "resume") return nav("session");
+  if (a === "open-journey-picker") {
+    journeyPracticeView = "picker";
+    notice = "";
+    return render();
+  }
+  if (a === "journey-practice-back") {
+    journeyPracticeView = "";
+    return render();
+  }
+  if (a === "start-journey-practice") {
+    const journey = practiceJourneyChoices().find(
+      (item) => item.id === b.dataset.journeyId,
+    );
+    if (!journey) return;
+    journeyPracticeView = journey.id;
+    notice = "";
+    return render();
+  }
   if (a === "replace-session") {
     if (
       !confirm(
@@ -1183,6 +1478,54 @@ root.addEventListener("click", (e) => {
     persist();
     return render();
   }
+  if (a === "new-journey") {
+    if (
+      data.draft &&
+      !confirm("Start a new journey and discard the current unsaved changes?")
+    )
+      return;
+    draft = {
+      id: crypto.randomUUID(),
+      name: "",
+      stops: [{ name: "", association: "" }],
+    };
+    data.draft = structuredClone(draft);
+    journeyId = draft.id;
+    detailView = "name";
+    notice = "";
+    persist();
+    return render();
+  }
+  if (a === "resume-draft") {
+    if (!data.draft) return;
+    draft = structuredClone(data.draft);
+    journeyId = draft.id;
+    detailView = draft.name.trim() ? "edit" : "name";
+    notice = "";
+    return render();
+  }
+  if (a === "discard-draft") {
+    if (!confirm("Discard these unsaved journey changes?")) return;
+    data.draft = null;
+    draft = structuredClone(data.journeys[0]);
+    journeyId = null;
+    detailView = "";
+    notice = "Unsaved journey changes discarded.";
+    persist();
+    return render();
+  }
+  if (a === "start-journey-editor") {
+    if (!draft.name.trim()) {
+      notice = "Give your journey a name before continuing.";
+      return render();
+    }
+    if (!draft.stops.length) draft.stops.push({ name: "", association: "" });
+    data.draft = draft;
+    detailView = "edit";
+    notice = "";
+    persist();
+    return render();
+  }
   if (a === "move-stop") {
     draft.stops = moveStop(
       draft.stops,
@@ -1194,16 +1537,33 @@ root.addEventListener("click", (e) => {
     return render();
   }
   if (a === "add-stop") {
-    if (draft.stops.length >= 20) return;
     draft.stops.push({
-      name: `Stop ${draft.stops.length + 1}`,
+      name: "",
       association: "",
     });
     data.draft = draft;
     persist();
     return render();
   }
+  if (a === "remove-stop") {
+    const index = Number(b.dataset.index);
+    if (
+      !Number.isInteger(index) ||
+      index < 0 ||
+      index >= draft.stops.length ||
+      draft.stops.length === 1
+    )
+      return;
+    draft.stops.splice(index, 1);
+    data.draft = draft;
+    persist();
+    return render();
+  }
   if (a === "save-journey") {
+    if (!draft.name.trim()) {
+      notice = "Give your journey a name before saving.";
+      return render();
+    }
     const cleaned = validateJourney(draft);
     if (!cleaned) {
       notice = "Give every stop a name before saving.";
@@ -1216,10 +1576,17 @@ root.addEventListener("click", (e) => {
       notice = "Choose distinct names for each stop.";
       return render();
     }
-    data.journeys[0] = cleaned;
-    draft = structuredClone(cleaned);
+    const savedJourney = { ...cleaned, template: false },
+      existingIndex = data.journeys.findIndex(
+        (journey) => journey.id === cleaned.id,
+      );
+    if (existingIndex >= 0) data.journeys[existingIndex] = savedJourney;
+    else data.journeys.push(savedJourney);
+    draft = structuredClone(savedJourney);
     data.draft = null;
-    notice = "Journey saved. New practice will use this route.";
+    journeyId = savedJourney.id;
+    detailView = "journey";
+    notice = "Journey saved.";
     persist();
     return render();
   }
@@ -1270,6 +1637,12 @@ root.addEventListener("click", (e) => {
     notice = "Local progress deleted.";
     return nav("home");
   }
+});
+root.addEventListener("change", (e) => {
+  if (e.target.id !== "lesson-motion-setting") return;
+  saveLessonMotionPreference(e.target.value);
+  document.querySelector("#lesson-motion-feedback").textContent =
+    `Lesson animations: ${e.target.selectedOptions[0].textContent}.`;
 });
 root.addEventListener("input", (e) => {
   if (e.target.id === "brain-timeline") {

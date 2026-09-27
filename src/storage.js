@@ -1,4 +1,9 @@
-import { defaultJourney, lessons, CONTENT_VERSION } from "./content.js";
+import {
+  defaultJourney,
+  periodicJourney,
+  lessons,
+  CONTENT_VERSION,
+} from "./content.js";
 const key = "memory-mastery-v2",
   text = (s, n = 500) => (typeof s === "string" ? s.slice(0, n) : ""),
   num = (n, min, max) => Number.isFinite(n) && n >= min && n <= max;
@@ -9,25 +14,30 @@ const wordList = (a) =>
   known = (id) => lessons.some((l) => l.id === id);
 export const empty = () => ({
   version: CONTENT_VERSION,
+  preferences: { lessonAnimations: "system" },
   goal: "",
   attempts: [],
   reviews: [],
-  journeys: [structuredClone(defaultJourney)],
+  journeys: [structuredClone(defaultJourney), structuredClone(periodicJourney)],
+  practiceJourney: structuredClone(defaultJourney),
   session: null,
   draft: null,
 });
-export function validateJourney(v) {
+export function validateJourney(v, { allowBlank = false } = {}) {
   if (
     !v ||
     !Array.isArray(v.stops) ||
-    v.stops.length < 5 ||
-    v.stops.length > 20 ||
-    v.stops.some((s) => !s || typeof s.name !== "string" || !s.name.trim())
+    v.stops.length < 1 ||
+    v.stops.some(
+      (s) =>
+        !s || typeof s.name !== "string" || (!allowBlank && !s.name.trim()),
+    )
   )
     return null;
   return {
     id: text(v.id, 80) || "home",
-    name: text(v.name, 100).trim() || "My journey",
+    name: text(v.name, 100).trim() || (allowBlank ? "" : "My journey"),
+    template: Boolean(v.template),
     stops: v.stops.map((s) => ({
       name: text(s.name, 100).trim(),
       association: text(s.association),
@@ -76,9 +86,43 @@ export function validateSession(s) {
     recallAt: num(s.recallAt, 0, 1e15) ? s.recallAt : null,
   };
 }
+function normaliseJourneys(rawJourneys) {
+  const journeys = [],
+    ids = new Set();
+  for (const [index, raw] of (Array.isArray(rawJourneys)
+    ? rawJourneys
+    : []
+  ).entries()) {
+    const journey = validateJourney(raw);
+    if (!journey) continue;
+    let id = journey.id || `journey-${index + 1}`;
+    if (ids.has(id)) {
+      let suffix = 2;
+      while (ids.has(`${id}-${suffix}`)) suffix++;
+      id = `${id}-${suffix}`;
+    }
+    ids.add(id);
+    journeys.push(
+      id === periodicJourney.id && journey.template
+        ? structuredClone(periodicJourney)
+        : { ...journey, id },
+    );
+  }
+  if (!journeys.length) return [];
+  if (!ids.has(periodicJourney.id))
+    journeys.push(structuredClone(periodicJourney));
+  return journeys;
+}
 export function validateStore(raw) {
   const data = empty();
   if (!raw || raw.version !== CONTENT_VERSION) return data;
+  if (
+    raw.preferences &&
+    typeof raw.preferences === "object" &&
+    !Array.isArray(raw.preferences) &&
+    ["system", "on", "off"].includes(raw.preferences.lessonAnimations)
+  )
+    data.preferences.lessonAnimations = raw.preferences.lessonAnimations;
   data.goal = text(raw.goal, 100);
   const ids = new Set();
   data.attempts = (Array.isArray(raw.attempts) ? raw.attempts : [])
@@ -108,13 +152,21 @@ export function validateStore(raw) {
         num(r.delayMs, 0, 1e15),
     )
     .slice(-1000);
-  const journeys = (Array.isArray(raw.journeys) ? raw.journeys : [])
-    .map(validateJourney)
-    .filter(Boolean)
-    .slice(0, 20);
+  const journeys = normaliseJourneys(raw.journeys);
   if (journeys.length) data.journeys = journeys;
+  const savedPracticeJourney = validateJourney(raw.practiceJourney),
+    legacyPracticeJourney = journeys.find(
+      (journey) => journey.stops.length >= 5,
+    );
+  data.practiceJourney = structuredClone(
+    savedPracticeJourney?.stops.length >= 5
+      ? savedPracticeJourney
+      : legacyPracticeJourney?.stops.length >= 5
+        ? legacyPracticeJourney
+        : defaultJourney,
+  );
   data.session = validateSession(raw.session);
-  data.draft = validateJourney(raw.draft);
+  data.draft = validateJourney(raw.draft, { allowBlank: true });
   return data;
 }
 export function load(storage) {
@@ -124,8 +176,13 @@ export function load(storage) {
     const data = empty(),
       old = JSON.parse(storage.getItem("memory-mastery-journeys") || "null");
     if (Array.isArray(old)) {
-      const routes = old.map(validateJourney).filter(Boolean);
-      if (routes.length) data.journeys = routes;
+      const routes = normaliseJourneys(old);
+      if (routes.length) {
+        data.journeys = routes;
+        data.practiceJourney = structuredClone(
+          routes.find((journey) => journey.stops.length >= 5) || defaultJourney,
+        );
+      }
     }
     return {
       data,

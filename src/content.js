@@ -8,9 +8,45 @@ export const goals = [
 export const defaultJourney = {
   id: "home",
   name: "My home journey",
+  template: true,
   stops: ["Front door", "Hall table", "Kitchen sink", "Sofa", "Window"].map(
     (name) => ({ name, association: "" }),
   ),
+};
+export const periodicJourney = {
+  id: "periodic-table",
+  name: "Periodic table",
+  template: true,
+  stops: [
+    "Front door",
+    "Hall table",
+    "Coat rack",
+    "Living room sofa",
+    "TV stand",
+    "Dining table",
+    "Kitchen sink",
+    "Fridge",
+    "Stairs",
+    "Bathroom mirror",
+    "Bedroom wardrobe",
+    "Bedside table",
+  ].map((name, i) => ({
+    name,
+    association: [
+      "Hydrogen",
+      "Helium",
+      "Lithium",
+      "Beryllium",
+      "Boron",
+      "Carbon",
+      "Nitrogen",
+      "Oxygen",
+      "Fluorine",
+      "Neon",
+      "Sodium",
+      "Magnesium",
+    ][i],
+  })),
 };
 // Similar-format concrete-noun lists, not psychometrically equated.
 export const lists = [

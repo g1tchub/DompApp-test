@@ -1,0 +1,257 @@
+.lesson-visual {
+  width: 100%;
+  max-width: 960px;
+  margin: 24px 0;
+  overflow: hidden;
+  color: var(--ink, #17211d);
+  background: #fffef8;
+  border: 1px solid #dddccc;
+  border-radius: 18px;
+  box-shadow: 0 12px 32px rgb(23 33 29 / 7%);
+}
+
+.lesson-visual [hidden] {
+  display: none !important;
+}
+
+.lesson-visual-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 20px;
+}
+
+.lesson-visual-eyebrow {
+  color: #633baa;
+  font-size: 0.75rem;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.lesson-visual-duration {
+  color: #60695b;
+  font-size: 0.75rem;
+}
+
+.lesson-visual-scene {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 56svh;
+  overflow: hidden;
+  isolation: isolate;
+  background: #232927;
+}
+
+.lesson-visual-video,
+.lesson-visual-poster {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+.lesson-visual-poster {
+  z-index: 2;
+  pointer-events: none;
+}
+
+.lesson-visual-video {
+  z-index: 1;
+}
+
+.lesson-visual-fallback {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  height: 100%;
+  padding: clamp(24px, 6vw, 64px);
+  color: #494723;
+  background: linear-gradient(135deg, #f9efab, #efdfa2);
+  line-height: 1.6;
+}
+
+.lesson-visual-fallback strong {
+  font-size: clamp(1.4rem, 4vw, 2.3rem);
+}
+
+.lesson-visual-caption {
+  display: grid;
+  gap: 4px;
+  padding: 18px 20px 0;
+  line-height: 1.55;
+}
+
+.lesson-visual-caption strong {
+  font-size: 1.15rem;
+}
+
+.lesson-visual-caption span {
+  color: #59614f;
+  font-size: 0.9rem;
+}
+
+.lesson-visual-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  padding: 16px 20px;
+}
+
+.lesson-visual-button {
+  min-height: 44px;
+  padding: 10px 15px;
+  border: 1px solid #8056c3;
+  border-radius: 8px;
+  color: #633baa;
+  background: #f5f0fd;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.lesson-visual-button:hover:not(:disabled) {
+  background: #eee4fa;
+}
+
+.lesson-visual-button:focus-visible,
+.lesson-visual-setting select:focus-visible {
+  outline: 3px solid #8056c3;
+  outline-offset: 3px;
+}
+
+.lesson-visual-status {
+  flex: 1 1 160px;
+  margin: 0;
+  color: #60695b;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.lesson-visual-preferences {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  padding: 8px 20px;
+  background: #f5f4e9;
+  border-top: 1px solid #e6e4d6;
+}
+
+.lesson-visual-setting {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+
+.lesson-visual-setting select {
+  max-width: 100%;
+  min-height: 44px;
+  padding: 8px 26px 8px 8px;
+  border: 1px solid #d5d6c9;
+  border-radius: 6px;
+  color: #473857;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.lesson-visual-preferences p {
+  flex: 1 1 220px;
+  margin: 0;
+  max-width: 52ch;
+  color: #60695b;
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.visual-lesson-teaching {
+  min-width: 0;
+  max-width: 960px;
+  margin-inline: auto;
+}
+
+.visual-lesson-teaching > p {
+  max-width: 70ch;
+  line-height: 1.65;
+}
+
+.lesson-motion-settings {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid #e4dfee;
+}
+
+.lesson-motion-settings h2 {
+  margin: 0 0 10px;
+  font-size: 1.25rem;
+}
+
+.lesson-motion-settings > p {
+  max-width: 65ch;
+  line-height: 1.6;
+}
+
+.lesson-motion-settings label {
+  display: block;
+  margin: 18px 0 8px;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+#lesson-motion-setting {
+  width: min(320px, 100%);
+  min-height: 44px;
+  padding: 10px 36px 10px 12px;
+  border: 1px solid #cfc2e0;
+  border-radius: 8px;
+  color: #473857;
+  background: #fff;
+  font: inherit;
+}
+
+#lesson-motion-setting:focus-visible {
+  outline: 3px solid #8056c3;
+  outline-offset: 3px;
+}
+
+.lesson-motion-settings .fine-print,
+.lesson-motion-settings [role="status"] {
+  margin: 10px 0 0;
+  color: #6a6073;
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 480px) {
+  #lesson-motion-setting {
+    width: 100%;
+  }
+
+  .lesson-visual {
+    margin: 18px 0;
+    border-radius: 12px;
+  }
+
+  .lesson-visual-heading,
+  .lesson-visual-controls,
+  .lesson-visual-preferences {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .lesson-visual-caption {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+}
