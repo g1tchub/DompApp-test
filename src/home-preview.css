@@ -854,18 +854,21 @@
   font-size: 18px;
   font-weight: 500;
 }
-.journey-practice-list details {
+.journey-practice-reveal {
+  width: fit-content;
+  min-height: 42px;
+  margin-top: 4px;
+  padding: 9px 13px;
+  text-align: left;
+}
+.journey-practice-association {
+  display: grid;
+  gap: 6px;
   margin-top: 5px;
 }
-.journey-practice-list summary {
-  color: #633baa;
-  cursor: pointer;
-  font-size: 14px;
-}
-.journey-practice-list details p {
-  margin: 8px 0 0;
-  color: #625e6b;
-  font-size: 15px;
+.journey-practice-association > strong {
+  font-size: 18px;
+  font-weight: 500;
 }
 .progress-summary {
   margin: 0;

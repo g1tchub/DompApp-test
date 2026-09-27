@@ -107,11 +107,13 @@ function persist() {
 }
 let detailView = "",
   journeyId = null,
-  journeyPracticeView = "";
+  journeyPracticeView = "",
+  journeyPracticeRevealed = new Set();
 function nav(target) {
   detailView = "";
   journeyId = null;
   journeyPracticeView = "";
+  journeyPracticeRevealed = new Set();
   if (names[target]) section = target;
   render();
   window.scrollTo(0, 0);
@@ -474,7 +476,15 @@ function journeyPracticeScreen(journey) {
     <h2>${esc(journey.name)}</h2>
     <p>Try to recall the association at each location before you reveal it.</p>
     <ol class="journey-practice-list">
-      ${journey.stops.map((stop, i) => `<li><span class="journey-practice-index">${i + 1}</span><div><span class="journey-practice-label">Location ${i + 1}</span><strong>${esc(stop.name)}</strong><details><summary>Reveal association ${i + 1}</summary><p>${stop.association ? esc(stop.association) : "No association saved yet."}</p></details></div></li>`).join("")}
+      ${journey.stops
+        .map((stop, i) => {
+          const revealed = journeyPracticeRevealed.has(i),
+            association = stop.association
+              ? esc(stop.association)
+              : "No association saved yet.";
+          return `<li><span class="journey-practice-index">${i + 1}</span><div><span class="journey-practice-label">Location ${i + 1}</span><strong>${esc(stop.name)}</strong>${revealed ? `<div class="journey-practice-association"><span class="journey-practice-label">Association ${i + 1}</span><strong>${association}</strong><button type="button" class="secondary-action journey-practice-reveal" data-action="hide-association" data-index="${i}">Hide association ${i + 1}</button></div>` : `<button type="button" class="secondary-action journey-practice-reveal" data-action="reveal-association" data-index="${i}">Reveal association ${i + 1}</button>`}</div></li>`;
+        })
+        .join("")}
     </ol>
     <div class="builder-actions">
       ${button("Choose another journey", "open-journey-picker", "", true)}
@@ -1416,11 +1426,13 @@ root.addEventListener("click", (e) => {
   if (a === "resume") return nav("session");
   if (a === "open-journey-picker") {
     journeyPracticeView = "picker";
+    journeyPracticeRevealed = new Set();
     notice = "";
     return render();
   }
   if (a === "journey-practice-back") {
     journeyPracticeView = "";
+    journeyPracticeRevealed = new Set();
     return render();
   }
   if (a === "start-journey-practice") {
@@ -1429,7 +1441,15 @@ root.addEventListener("click", (e) => {
     );
     if (!journey) return;
     journeyPracticeView = journey.id;
+    journeyPracticeRevealed = new Set();
     notice = "";
+    return render();
+  }
+  if (a === "reveal-association" || a === "hide-association") {
+    const index = Number(b.dataset.index);
+    if (!Number.isInteger(index) || index < 0) return;
+    if (a === "reveal-association") journeyPracticeRevealed.add(index);
+    else journeyPracticeRevealed.delete(index);
     return render();
   }
   if (a === "replace-session") {
