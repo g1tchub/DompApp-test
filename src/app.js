@@ -12,6 +12,7 @@ import {
 import { load, save, empty, validateJourney } from "./storage.js";
 import { mountBrain } from "./brain.js";
 import { lessonVisualMarkup, mountLessonVisual } from "./lesson-visual.js";
+import { walkResult } from "./journey-walk.js";
 
 const html = String.raw;
 const root = document.querySelector("#app");
@@ -108,7 +109,9 @@ function persist() {
 let detailView = "",
   journeyId = null,
   journeyPracticeView = "",
-  journeyPracticeRevealed = new Set();
+  journeyPracticeRevealed = new Set(),
+  walkIndex = 0,
+  walkAnswers = [];
 function nav(target) {
   detailView = "";
   journeyId = null;
@@ -464,32 +467,23 @@ function practiceJourneyPicker() {
 }
 function journeyPracticeScreen(journey) {
   if (!journey) return practiceJourneyPicker();
-  return html`<section class="panel journey-practice-panel">
-    <button
-      type="button"
-      class="detail-back"
-      data-action="journey-practice-back"
-    >
-      ← Back to practise
-    </button>
-    <p class="eyebrow">Journey practice</p>
-    <h2>${esc(journey.name)}</h2>
-    <p>Try to recall the association at each location before you reveal it.</p>
-    <ol class="journey-practice-list">
-      ${journey.stops
-        .map((stop, i) => {
-          const revealed = journeyPracticeRevealed.has(i),
-            association = stop.association
-              ? esc(stop.association)
-              : "No association saved yet.";
-          return `<li><span class="journey-practice-index">${i + 1}</span><div><span class="journey-practice-label">Location ${i + 1}</span><strong>${esc(stop.name)}</strong>${revealed ? `<div class="journey-practice-association"><span class="journey-practice-label">Association ${i + 1}</span><strong>${association}</strong><button type="button" class="secondary-action journey-practice-reveal" data-action="hide-association" data-index="${i}">Hide association ${i + 1}</button></div>` : `<button type="button" class="secondary-action journey-practice-reveal" data-action="reveal-association" data-index="${i}">Reveal association ${i + 1}</button>`}</div></li>`;
-        })
-        .join("")}
-    </ol>
-    <div class="builder-actions">
-      ${button("Choose another journey", "open-journey-picker", "", true)}
-    </div>
-  </section>`;
+  const back = button(
+    section === "build" ? "← Back to journey" : "← Back to practise",
+    "journey-practice-back",
+    "",
+    true,
+  );
+  if (walkIndex >= journey.stops.length) {
+    const result = walkResult(journey.stops, walkAnswers);
+    const avatar = new URL(
+      `./assets/dominic/dominic-${result.band === "encouraging" ? "coaching" : "congratulations"}.png`,
+      import.meta.url,
+    ).href;
+    return `<section class="panel journey-practice-panel journey-walk-result" data-band="${result.band}">${back}<p class="eyebrow">Walk complete · ${esc(journey.name)}</p><h2 tabindex="-1">${result.percentage === null ? "Journey explored" : `${result.percentage}%`}</h2><p>${result.total ? `${result.remembered} of ${result.total} associations remembered · self-rated` : "Add associations to your locations to get a recall score."}</p>${journey.stops.length > result.total ? '<p class="fine-print">Locations without an association are excluded from your score.</p>' : ""}<div class="walk-coach"><img src="${avatar}" alt="Dominic O’Brien ${result.band === "encouraging" ? "offering encouragement" : "smiling and celebrating"}" width="120" height="120"><div><span class="eyebrow">Dominic</span><h3>${result.title}</h3><p>${result.message}</p></div>${result.band === "perfect" ? '<span class="walk-stars" aria-hidden="true">✦ ★ ✦</span>' : ""}</div><div class="builder-actions">${button("Walk again", "start-journey-practice", `data-journey-id="${esc(journey.id)}"`)}</div></section>`;
+  }
+  const stop = journey.stops[walkIndex],
+    revealed = journeyPracticeRevealed.has(walkIndex);
+  return `<section class="panel journey-practice-panel">${back}<p class="eyebrow">Walk my journey</p><h2>${esc(journey.name)}</h2><p>Location ${walkIndex + 1} of ${journey.stops.length}</p><progress class="lesson-progress" aria-label="Journey progress" max="${journey.stops.length}" value="${walkIndex}"></progress><article class="walk-location"><h3 tabindex="-1">${esc(stop.name)}</h3><p>Picture this location. What association comes to mind?</p>${revealed ? `<div class="journey-practice-association" tabindex="-1"><span class="journey-practice-label">Association</span><strong>${stop.association.trim() ? esc(stop.association) : "No association saved yet."}</strong></div>${stop.association.trim() ? `<p>Did you remember it before revealing?</p><div class="walk-rating">${button("I remembered", "rate-walk", `data-index="${walkIndex}" data-remembered="true"`)}${button("I missed it", "rate-walk", `data-index="${walkIndex}" data-remembered="false"`, true)}</div>` : button(walkIndex === journey.stops.length - 1 ? "Finish walk" : "Next location", "rate-walk", `data-index="${walkIndex}"`)}` : button("Reveal association", "reveal-association", `data-index="${walkIndex}"`)}</article></section>`;
 }
 function train() {
   if (journeyPracticeView === "picker") return practiceJourneyPicker();
@@ -774,7 +768,9 @@ function journeyDetail(journey) {
           ${journey.stops.length === 1 ? "stop" : "stops"}
         </p>
       </div>
-      ${button("Edit journey", "detail", `data-view="edit" data-journey-id="${esc(journey.id)}"`, true)}
+      <div class="builder-actions">
+        ${button("Walk my journey", "start-journey-practice", `data-journey-id="${esc(journey.id)}"`)}${button("Edit journey", "detail", `data-view="edit" data-journey-id="${esc(journey.id)}"`, true)}
+      </div>
     </div>
     <ol class="route-overview">
       ${journey.stops.map((stop, i) => `<li><div><span>Location ${i + 1}</span><strong>${esc(stop.name)}</strong></div><div><span>Association ${i + 1}</span><strong>${stop.association ? esc(stop.association) : "—"}</strong></div></li>`).join("")}
@@ -815,6 +811,10 @@ function journeyEditor() {
   </section>`;
 }
 function build() {
+  if (journeyPracticeView)
+    return journeyPracticeScreen(
+      data.journeys.find((journey) => journey.id === journeyPracticeView),
+    );
   if (detailView === "name") return journeyNamePrompt();
   if (detailView === "journey")
     return journeyDetail(
@@ -1436,21 +1436,45 @@ root.addEventListener("click", (e) => {
     return render();
   }
   if (a === "start-journey-practice") {
-    const journey = practiceJourneyChoices().find(
+    const journey = data.journeys.find(
       (item) => item.id === b.dataset.journeyId,
     );
     if (!journey) return;
     journeyPracticeView = journey.id;
+    walkIndex = 0;
+    walkAnswers = [];
     journeyPracticeRevealed = new Set();
     notice = "";
     return render();
+  }
+  if (a === "rate-walk") {
+    const journey = data.journeys.find(
+      (item) => item.id === journeyPracticeView,
+    );
+    if (
+      !journey ||
+      Number(b.dataset.index) !== walkIndex ||
+      !journeyPracticeRevealed.has(walkIndex)
+    )
+      return;
+    walkAnswers[walkIndex] = journey.stops[walkIndex].association.trim()
+      ? b.dataset.remembered === "true"
+      : null;
+    walkIndex++;
+    render();
+    document
+      .querySelector(".walk-location h3, .journey-walk-result h2")
+      ?.focus();
+    return;
   }
   if (a === "reveal-association" || a === "hide-association") {
     const index = Number(b.dataset.index);
     if (!Number.isInteger(index) || index < 0) return;
     if (a === "reveal-association") journeyPracticeRevealed.add(index);
     else journeyPracticeRevealed.delete(index);
-    return render();
+    render();
+    document.querySelector(".journey-practice-association")?.focus();
+    return;
   }
   if (a === "replace-session") {
     if (

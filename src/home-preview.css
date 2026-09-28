@@ -793,6 +793,93 @@
   max-width: 760px;
   margin: auto;
 }
+.walk-location {
+  padding: 24px 0;
+  overflow-wrap: anywhere;
+}
+.walk-location h3 {
+  font-size: 30px;
+  margin: 0 0 16px;
+}
+.walk-location .journey-practice-association {
+  background: #f6f2fc;
+  padding: 24px;
+  border-radius: 16px;
+  margin: 24px 0;
+}
+.walk-rating {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.walk-rating button {
+  flex: 1;
+  min-height: 52px;
+}
+.journey-walk-result > h2 {
+  font-size: 64px;
+  margin: 20px 0 8px;
+  color: #633baa;
+}
+.walk-coach {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 20px;
+  padding: 24px;
+  background: #faf7ff;
+  border-radius: 20px;
+  margin: 24px 0;
+}
+.walk-coach img {
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.walk-coach > div {
+  flex: 1 1 200px;
+}
+.walk-coach h3 {
+  margin: 8px 0;
+  font-size: 24px;
+}
+.walk-coach p {
+  line-height: 1.7;
+}
+[data-band="excited"] .walk-coach {
+  background: #fff5df;
+}
+[data-band="perfect"] .walk-coach {
+  background: #fff1c9;
+  border: 2px solid #e3c46a;
+}
+.walk-stars {
+  width: 100%;
+  text-align: center;
+  color: #8c6515;
+  font-size: 32px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  [data-band="excited"] .walk-coach img,
+  [data-band="perfect"] .walk-coach img {
+    animation: walk-celebrate 700ms ease-out;
+  }
+  [data-band="perfect"] .walk-stars {
+    animation: walk-celebrate 900ms ease-out;
+  }
+}
+@keyframes walk-celebrate {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+  35% {
+    transform: translateY(-10px) rotate(-5deg);
+  }
+  65% {
+    transform: translateY(-4px) rotate(4deg);
+  }
+}
 .journey-practice-options {
   margin-top: 24px;
   border-top: 1px solid #e9e7ef;
