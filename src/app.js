@@ -143,6 +143,11 @@ function launch(id) {
 }
 function render() {
   document.body.classList.remove("menu-open");
+  document.body.classList.toggle("focused-screen", section !== "home");
+  document.body.classList.toggle(
+    "journey-walk-active",
+    Boolean(journeyPracticeView && journeyPracticeView !== "picker"),
+  );
   disposeBrain();
   disposeLessonVisual();
   document.body.classList.toggle("home-preview", preview && section === "home");
@@ -217,6 +222,7 @@ function render() {
       </nav>
     </dialog>
     <main class="main-content">
+      ${section !== "home" && !detailView && !journeyPracticeView && !["session", "scene"].includes(section) ? `<button type="button" class="detail-back screen-back" data-action="nav" data-section="${section === "review" ? "train" : "home"}">← Back to ${section === "review" ? "practise" : "Today"}</button>` : ""}
       <header class="top-bar">
         <div>
           ${
@@ -483,7 +489,7 @@ function journeyPracticeScreen(journey) {
   }
   const stop = journey.stops[walkIndex],
     revealed = journeyPracticeRevealed.has(walkIndex);
-  return `<section class="panel journey-practice-panel">${back}<p class="eyebrow">Walk my journey</p><h2>${esc(journey.name)}</h2><p>Location ${walkIndex + 1} of ${journey.stops.length}</p><progress class="lesson-progress" aria-label="Journey progress" max="${journey.stops.length}" value="${walkIndex}"></progress><article class="walk-location"><h3 tabindex="-1">${esc(stop.name)}</h3><p>Picture this location. What association comes to mind?</p>${revealed ? `<div class="journey-practice-association" tabindex="-1"><span class="journey-practice-label">Association</span><strong>${stop.association.trim() ? esc(stop.association) : "No association saved yet."}</strong></div>${stop.association.trim() ? `<p>Did you remember it before revealing?</p><div class="walk-rating">${button("I remembered", "rate-walk", `data-index="${walkIndex}" data-remembered="true"`)}${button("I missed it", "rate-walk", `data-index="${walkIndex}" data-remembered="false"`, true)}</div>` : button(walkIndex === journey.stops.length - 1 ? "Finish walk" : "Next location", "rate-walk", `data-index="${walkIndex}"`)}` : button("Reveal association", "reveal-association", `data-index="${walkIndex}"`)}</article></section>`;
+  return `<section class="panel journey-practice-panel">${back}<header class="walk-overview"><p class="eyebrow">Walk my journey</p><h2>${esc(journey.name)}</h2><p>Location ${walkIndex + 1} of ${journey.stops.length}</p><progress class="lesson-progress" aria-label="Journey progress" max="${journey.stops.length}" value="${walkIndex}"></progress></header><article class="walk-location"><span class="journey-practice-label">Location ${walkIndex + 1}</span><h3 tabindex="-1">${esc(stop.name)}</h3><p>Picture this location. What association comes to mind?</p>${revealed ? `<div class="journey-practice-association" tabindex="-1"><span class="journey-practice-label">Association</span><strong>${stop.association.trim() ? esc(stop.association) : "No association saved yet."}</strong></div>${stop.association.trim() ? `<p>Did you remember it before revealing?</p><div class="walk-rating">${button("I remembered", "rate-walk", `data-index="${walkIndex}" data-remembered="true"`)}${button("I missed it", "rate-walk", `data-index="${walkIndex}" data-remembered="false"`, true)}</div>` : button(walkIndex === journey.stops.length - 1 ? "Finish walk" : "Next location", "rate-walk", `data-index="${walkIndex}"`)}` : button("Reveal association", "reveal-association", `data-index="${walkIndex}"`)}</article></section>`;
 }
 function train() {
   if (journeyPracticeView === "picker") return practiceJourneyPicker();
@@ -1214,7 +1220,7 @@ function setMenuPosition(menu, position) {
   menu.style.setProperty("--menu-reveal", String(position / width));
 }
 function openMenu(dragging = false) {
-  if (section === "session") return;
+  if (section !== "home") return;
   const menu = document.querySelector("#mobile-menu");
   if (!matchMedia("(max-width: 760px)").matches || menu.open) return;
   menu.showModal();
@@ -1292,7 +1298,7 @@ document.addEventListener(
     if (menuTouch?.dragging) settleMenu(menuTouch.wasOpen);
     menuTouch = null;
     if (
-      section === "session" ||
+      section !== "home" ||
       !matchMedia("(max-width: 760px)").matches ||
       event.touches.length !== 1 ||
       event.target.closest("input, textarea, select, [contenteditable], canvas")

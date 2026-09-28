@@ -795,7 +795,7 @@
 }
 .walk-location {
   padding: 24px 0;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 .walk-location h3 {
   font-size: 30px;
