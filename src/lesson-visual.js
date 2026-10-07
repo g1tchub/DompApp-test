@@ -1,12 +1,10 @@
+import { lessonMedia } from "./lesson-media.js";
+
 const VALID_PREFERENCES = new Set(["system", "on", "off"]);
 const normalisePreference = (value) =>
   VALID_PREFERENCES.has(value) ? value : "system";
-const videoUrl = new URL("./assets/lessons/lemon-scene.mp4", import.meta.url)
-  .href;
-const posterUrl = new URL(
-  "./assets/lessons/lemon-scene-final.png",
-  import.meta.url,
-).href;
+const videoUrl = new URL(lessonMedia.images.video, import.meta.url).href;
+const posterUrl = new URL(lessonMedia.images.poster, import.meta.url).href;
 
 /** A still-first lesson example with one deliberately finite animation. */
 export function lessonVisualMarkup(lessonId) {
@@ -166,6 +164,9 @@ export function mountLessonVisual(
     }
     autoplayBlocked = false;
     playing = true;
+    // Keep a rendered video box for mobile autoplay; the poster covers it until
+    // the first video frame is ready, so loading never flashes an empty player.
+    video.hidden = false;
     root.dataset.state = "playing";
     replay.hidden = true;
     skip.hidden = false;
