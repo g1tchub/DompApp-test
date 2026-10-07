@@ -1,6 +1,6 @@
 
 const CACHE_PREFIX = "memory-mastery-" + self.registration.scope;
-const CACHE = CACHE_PREFIX + "761b90c46bb32c54";
+const CACHE = CACHE_PREFIX + "37c30e2a681e51f8";
 const ASSETS = ["./index.html","./manifest.webmanifest","./src/app.js","./src/assets/dominic/dominic-coaching.png","./src/assets/dominic/dominic-congratulations.png","./src/assets/dominic/dominic-neutral.png","./src/assets/dominic/dominic-photo.png","./src/assets/favicon.svg","./src/assets/fonts/OFL.txt","./src/assets/fonts/noto-sans-italic-variable.ttf","./src/assets/fonts/noto-sans-variable.ttf","./src/assets/icons/icon-180.png","./src/assets/icons/icon-192.png","./src/assets/icons/icon-512.png","./src/assets/lessons/lemon-final.png","./src/assets/lessons/lemon-kitchen.png","./src/assets/lessons/lemon-object.png","./src/assets/lessons/lemon-scene-final.png","./src/assets/lessons/lemon-scene.mp4","./src/brain.js","./src/content.js","./src/design-preview.css","./src/dominic.css","./src/foundations.css","./src/home-preview.css","./src/install.js","./src/journey-walk.js","./src/learning.js","./src/lesson-media.js","./src/lesson-visual.css","./src/lesson-visual.js","./src/media-response.js","./src/storage.js","./src/styles.css","./src/typography.css"];
 const respondToMediaRange = async function respondToMediaRange(request, response) {
   const range = request.headers.get("range");
