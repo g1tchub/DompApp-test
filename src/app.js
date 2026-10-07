@@ -38,10 +38,11 @@ try {
 const loaded = load(storage);
 let data = loaded.data,
   notice = loaded.warning;
-let section =
-    new URLSearchParams(location.search).get("lesson-preview") === "images"
-      ? "scene"
-      : "home",
+const previewLesson = lessons.find(
+  (lesson) =>
+    lesson.id === new URLSearchParams(location.search).get("lesson-preview"),
+);
+let section = previewLesson ? "scene" : "home",
   review = null,
   reviewResult = null,
   brainDemo = null,
@@ -538,12 +539,12 @@ function answerInputs(values, field) {
 function lessonScenePreview() {
   return html`<section class="session-panel">
     <article class="visual-lesson-teaching">
-      <p class="eyebrow">Session 2 · Imagination</p>
-      <h2>Make your images stick</h2>
-      <p>
-        A little movement. An impossible size. One image to hold in your mind.
+      <p class="eyebrow">
+        Session ${previewLesson.day} · ${esc(previewLesson.skill)}
       </p>
-      ${lessonVisualMarkup("images")}
+      <h2>${esc(previewLesson.title)}</h2>
+      <p>${esc(previewLesson.teach)}</p>
+      ${lessonVisualMarkup(previewLesson.id)}
       ${button(data.session ? "Return to my practice" : "Explore the lessons", "nav", `data-section="${data.session ? "session" : "learn"}"`)}
     </article>
   </section>`;

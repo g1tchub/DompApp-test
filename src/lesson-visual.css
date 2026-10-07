@@ -64,6 +64,19 @@
   z-index: 1;
 }
 
+.lesson-visual-time {
+  position: absolute;
+  z-index: 3;
+  top: 14px;
+  left: 14px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  color: #fffef8;
+  background: rgb(31 25 43 / 85%);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
 .lesson-visual-fallback {
   display: flex;
   flex-direction: column;

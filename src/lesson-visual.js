@@ -1,17 +1,20 @@
 import { lessonMedia } from "./lesson-media.js";
+import { lessonScenes } from "./lesson-scenes.js";
 
 const VALID_PREFERENCES = new Set(["system", "on", "off"]);
 const normalisePreference = (value) =>
   VALID_PREFERENCES.has(value) ? value : "system";
-const videoUrl = new URL(lessonMedia.images.video, import.meta.url).href;
-const posterUrl = new URL(lessonMedia.images.poster, import.meta.url).href;
 
 /** A still-first lesson example with one deliberately finite animation. */
 export function lessonVisualMarkup(lessonId) {
-  if (lessonId !== "images") return "";
+  const media = lessonMedia[lessonId];
+  const details = lessonScenes[lessonId];
+  if (!media || !details) return "";
+  const videoUrl = new URL(media.video, import.meta.url).href;
+  const posterUrl = new URL(media.poster, import.meta.url).href;
 
   return `
-    <figure class="lesson-visual" data-lesson-visual="images" data-state="still" data-ready="false">
+    <figure class="lesson-visual" data-lesson-visual="${lessonId}" data-state="still" data-ready="false">
       <div class="lesson-visual-heading">
         <span class="lesson-visual-eyebrow">See the idea</span>
         <span class="lesson-visual-duration">A moment to remember</span>
@@ -19,14 +22,15 @@ export function lessonVisualMarkup(lessonId) {
       <div class="lesson-visual-scene">
         <div class="lesson-visual-fallback" hidden>
           <strong>Imagine this.</strong>
-          <span>A lemon rolls into the sink, then grows until it fills the kitchen. The tiny tap is squeezed beside it.</span>
+          <span>${details.description}</span>
         </div>
         <video class="lesson-visual-video" src="${videoUrl}" poster="${posterUrl}" preload="auto" muted playsinline aria-hidden="true" tabindex="-1" hidden></video>
-        <img class="lesson-visual-poster" src="${posterUrl}" alt="An enormous yellow lemon fills a kitchen, with the tiny sink and tap showing just how large it has grown." decoding="async" />
+        <img class="lesson-visual-poster" src="${posterUrl}" alt="${details.description}" decoding="async" />
+        ${details.timeLabels ? '<span class="lesson-visual-time" aria-hidden="true">The next day</span>' : ""}
       </div>
       <figcaption class="lesson-visual-caption">
-        <strong>A lemon too big to forget.</strong>
-        <span>Into the sink. Bigger. Bigger still. Hold that impossible picture in your mind.</span>
+        <strong>${details.title}</strong>
+        <span>${details.caption}</span>
       </figcaption>
       <div class="lesson-visual-controls">
         <button class="lesson-visual-button" type="button" data-visual-replay>Replay animation</button>
@@ -65,6 +69,8 @@ export function mountLessonVisual(
   }
 
   const video = root.querySelector(".lesson-visual-video");
+  const details = lessonScenes[root.dataset.lessonVisual];
+  const timeLabel = root.querySelector(".lesson-visual-time");
   const poster = root.querySelector(".lesson-visual-poster");
   const fallback = root.querySelector(".lesson-visual-fallback");
   const scene = root.querySelector(".lesson-visual-scene");
@@ -127,6 +133,7 @@ export function mountLessonVisual(
     poster.hidden = posterFailed;
     fallback.hidden = !posterFailed;
     root.dataset.state = "still";
+    if (timeLabel) timeLabel.textContent = details.timeLabels.at(-1).text;
     replay.hidden = false;
     skip.hidden = true;
     updateReplay();
@@ -164,6 +171,7 @@ export function mountLessonVisual(
     }
     autoplayBlocked = false;
     playing = true;
+    if (timeLabel) timeLabel.textContent = details.timeLabels[0].text;
     // Keep a rendered video box for mobile autoplay; the poster covers it until
     // the first video frame is ready, so loading never flashes an empty player.
     video.hidden = false;
@@ -257,13 +265,20 @@ export function mountLessonVisual(
     video.hidden = false;
     poster.hidden = true;
     fallback.hidden = true;
-    status.textContent = "Watch it roll into the sink… then grow.";
+    status.textContent = details.watching;
   });
   listen(video, "waiting", () => {
     if (!playing || disposed) return;
     status.textContent = "Loading the animation…";
     guardLoading();
   });
+  if (timeLabel)
+    listen(video, "timeupdate", () => {
+      if (playing)
+        timeLabel.textContent =
+          details.timeLabels.findLast((label) => video.currentTime >= label.at)
+            ?.text || "Today";
+    });
   listen(video, "ended", () => {
     window.clearTimeout(loadTimeout);
     if (!disposed) showFinal();
