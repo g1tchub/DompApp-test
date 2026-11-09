@@ -1077,6 +1077,72 @@ button:disabled {
 .practice-goal-entry {
   margin-top: 24px;
 }
+
+.journey-study-card > div {
+  min-width: 0;
+  width: 100%;
+}
+
+.object-memory-help summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  cursor: pointer;
+  list-style: none;
+  border-radius: 8px;
+}
+
+.object-memory-help summary::-webkit-details-marker {
+  display: none;
+}
+
+.object-memory-help summary:focus-visible {
+  outline: 2px solid var(--wine);
+  outline-offset: 3px;
+}
+
+.object-memory-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 40px;
+  height: 40px;
+  background: #f2ebfa;
+  border-radius: 10px;
+  font-size: 24px;
+}
+
+.object-memory-toggle {
+  margin-left: auto;
+  padding: 0 6px;
+}
+
+.object-memory-help[open] .object-memory-toggle {
+  transform: rotate(180deg);
+}
+
+.object-memory-cues {
+  margin: 10px 0 14px;
+  padding: 14px;
+  border-radius: 10px;
+  background: #f8f4fc;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.object-memory-cues ol {
+  margin: 8px 0;
+  padding-left: 22px;
+}
+
+.object-memory-cues li + li {
+  margin-top: 5px;
+}
+
+.session-stage .object-memory-cues p {
+  margin: 0;
+  font-size: inherit;
+}
 .practice-goal-entry .practice-goal-button {
   width: 100%;
   min-height: 76px;

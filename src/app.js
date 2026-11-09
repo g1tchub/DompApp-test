@@ -13,6 +13,7 @@ import { load, save, empty, validateJourney } from "./storage.js";
 import { mountBrain } from "./brain.js";
 import { lessonVisualMarkup, mountLessonVisual } from "./lesson-visual.js";
 import { walkResult } from "./journey-walk.js";
+import { objectPrompt } from "./object-prompts.js";
 
 const html = String.raw;
 const root = document.querySelector("#app");
@@ -578,12 +579,23 @@ function sessionView() {
     body = html`<h2>What do you remember?</h2>
       <p>You don’t need to get them all. This is your first attempt.</p>
       ${answerInputs(s.baselineAnswers, "baselineAnswers")}${button("Learn the technique", "advance")}`;
-  if (s.step === "teach")
+  if (s.step === "teach") {
+    const customObjectsField = l.custom
+      ? html`<label class="text-field"
+          ><span>Your five objects, separated by commas</span
+          ><input
+            data-field="customText"
+            maxlength="450"
+            value="${esc(s.customText)}"
+            placeholder="apple, soap, rice, coffee, towel"
+        /></label>`
+      : "";
     body = visualMarkup
       ? html`<article class="visual-lesson-teaching">
           <h2>${esc(l.title)}</h2>
           <p>${esc(l.teach)}</p>
-          ${visualMarkup} ${button("Try it yourself", "advance")}
+          ${visualMarkup} ${customObjectsField}
+          ${button("Try it yourself", "advance")}
         </article>`
       : html`<div class="coach-layout">
           ${mentor()}
@@ -594,9 +606,10 @@ function sessionView() {
               <strong>Try this scene</strong>
               <p>${esc(l.example)}</p>
             </div>
-            ${l.ownRoute ? `<p>Using: <strong>${esc(data.practiceJourney.name)}</strong></p>` : ""}${l.custom ? `<label class="text-field"><span>Your five objects, separated by commas</span><input data-field="customText" maxlength="450" value="${esc(s.customText)}" placeholder="apple, soap, rice, coffee, towel"></label>` : ""}${button("Try it yourself", "advance")}
+            ${l.ownRoute ? `<p>Using: <strong>${esc(data.practiceJourney.name)}</strong></p>` : ""}${customObjectsField}${button("Try it yourself", "advance")}
           </article>
         </div>`;
+  }
   if (s.step === "study")
     body = html`<h2>
         ${l.mode === "link" ? "Connect each object to the next." : l.mode === "image" ? "Make each object distinctive." : "Give each object a place."}
@@ -605,7 +618,21 @@ function sessionView() {
         ${l.mode === "link" ? "Write a short action joining neighbouring objects." : l.mode === "image" ? "Add a vivid action, sound or detail for each object." : "Imagine an object at each stop. Add your own scene if it helps."}
       </p>
       <div class="journey-study-list">
-        ${s.words.map((w, i) => `<article class="journey-study-card"><span>${i + 1}</span><div><strong>${esc(w)}${l.mode === "journey" ? ` · ${esc(s.route[i])}` : l.mode === "link" && i < 4 ? ` → ${esc(s.words[i + 1])}` : ""}</strong><label class="text-field"><span>${l.mode === "link" ? "Your connection" : "Your memorable detail"} (optional)</span><input maxlength="500" data-field="notes" data-index="${i}" value="${esc(s.notes[i])}" placeholder="Make something surprising happen"></label></div></article>`).join("")}
+        ${s.words
+          .map((w, i) => {
+            const prompt = objectPrompt(w, {
+              mode: l.mode,
+              place: s.route[i],
+              next: s.words[i + 1],
+            });
+            return `<article class="journey-study-card"><span>${i + 1}</span><div><details class="object-memory-help"><summary aria-label="Memory idea for ${esc(w)}"><span class="object-memory-icon" aria-hidden="true">${prompt.icon}</span><strong>${esc(w)}${l.mode === "journey" ? ` · ${esc(s.route[i])}` : l.mode === "link" && i < 4 ? ` → ${esc(s.words[i + 1])}` : ""}</strong><span class="object-memory-toggle" aria-hidden="true">⌄</span></summary><div class="object-memory-cues"><strong>Try imagining this</strong><ol>${prompt.cues
+              .slice(0, 3)
+              .map((cue) => `<li>${esc(cue)}</li>`)
+              .join(
+                "",
+              )}</ol><p>${esc(prompt.cues[3])}</p></div></details><label class="text-field"><span>${l.mode === "link" ? "Your connection" : "Your memorable detail"} (optional)</span><input maxlength="500" data-field="notes" data-index="${i}" value="${esc(s.notes[i])}" placeholder="Make something surprising happen"></label></div></article>`;
+          })
+          .join("")}
       </div>
       ${button(l.custom ? "Hide the list & return later" : "Hide the list & recall", "advance")}`;
   if (s.step === "recall") {
