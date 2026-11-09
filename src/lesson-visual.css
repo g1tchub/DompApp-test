@@ -69,6 +69,7 @@
   z-index: 3;
   top: 14px;
   left: 14px;
+  max-width: calc(100% - 28px);
   padding: 7px 12px;
   border-radius: 999px;
   color: #fffef8;

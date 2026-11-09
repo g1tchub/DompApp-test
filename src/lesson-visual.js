@@ -26,7 +26,7 @@ export function lessonVisualMarkup(lessonId) {
         </div>
         <video class="lesson-visual-video" src="${videoUrl}" poster="${posterUrl}" preload="auto" muted playsinline aria-hidden="true" tabindex="-1" hidden></video>
         <img class="lesson-visual-poster" src="${posterUrl}" alt="${details.description}" decoding="async" />
-        ${details.timeLabels ? '<span class="lesson-visual-time" aria-hidden="true">The next day</span>' : ""}
+        ${details.timeLabels ? `<span class="lesson-visual-time" aria-hidden="true">${details.timeLabels.at(-1).text}</span>` : ""}
       </div>
       <figcaption class="lesson-visual-caption">
         <strong>${details.title}</strong>

@@ -69,7 +69,7 @@ export const lessons = [
     teach:
       "Picture each object doing something surprising at one stop. Move through the same places in the same order.",
     example:
-      "An umbrella springs open and blocks the front door. At the hall table, a giant watch ticks loudly.",
+      "An umbrella pops open and blocks the front door. At the hall table, a giant watch softens and melts over the edge.",
     apply:
       "Later today, mentally walk your route once without opening the app.",
     mode: "journey",
@@ -110,7 +110,7 @@ export const lessons = [
     teach:
       "Place the objects yourself. When the list disappears, walk the route without visible location hints. Check missed items and strengthen those scenes.",
     example:
-      "If two images blend together, give them separate locations and different actions.",
+      "Picture the umbrella at the door and the melting watch on the table. Hide the objects, revisit each place in your mind, and recall what was there before checking.",
     apply: "Try recalling today’s list later, before you look at it again.",
     mode: "journey",
     ownRoute: true,
@@ -124,7 +124,7 @@ export const lessons = [
     teach:
       "Make the first object act on the second, then the second on the third. Build clear transitions rather than unrelated pictures.",
     example:
-      "A violin plays so loudly that a lantern bursts open. The lantern spills oranges. One orange turns a giant key.",
+      "An umbrella pops open and knocks a lantern over. The lantern hits a clock, which stops ticking. Each action triggers the next.",
     apply:
       "Compare a short story chain with your journey. Which is easier to recover?",
     mode: "link",
